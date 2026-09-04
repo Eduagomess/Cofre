@@ -1,0 +1,2560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cofre — Controle Financeiro</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#09090b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cofre">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+<style>
+/* ==========================================================================
+   TEMA E VARIÁVEIS (DESIGN SYSTEM PREMIUM)
+   ========================================================================== */
+:root {
+  --bg: #09090b; --bg-1: #18181b; --bg-2: #27272a; --bg-3: #3f3f46;
+  --line: #27272a; --line-soft: #18181b;
+  --ink: #fafafa; --ink-dim: #a1a1aa; --ink-faint: #71717a;
+  
+  --success: #10b981; --success-dim: #059669; --success-alpha: rgba(16, 185, 129, 0.15);
+  --cedula: #10b981; --cedula-dim: #059669; --cedula-alpha: rgba(16, 185, 129, 0.2);
+  --ouro: #f59e0b; --ouro-dim: #d97706; --ouro-alpha: rgba(245, 158, 11, 0.15);
+  --coral: #ef4444; --coral-dim: #dc2626; --coral-alpha: rgba(239, 68, 68, 0.15);
+  
+  --radius-lg: 24px; --radius-md: 16px; --radius-sm: 10px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4); --shadow-md: 0 8px 24px -8px rgba(0,0,0,0.5); --shadow-lg: 0 24px 48px -12px rgba(0,0,0,0.6);
+  
+  --serif: "Fraunces", Georgia, serif; --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html.light {
+  --bg: #f8fafc; --bg-1: #ffffff; --bg-2: #f1f5f9; --bg-3: #e2e8f0;
+  --line: #e2e8f0; --line-soft: #f1f5f9;
+  --ink: #0f172a; --ink-dim: #475569; --ink-faint: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow-md: 0 8px 24px -8px rgba(0,0,0,0.08); --shadow-lg: 0 24px 48px -12px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; }
+html, body { max-width: 100vw; overflow-x: hidden; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; transition: background 0.4s ease, color 0.4s ease; }
+
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(circle 800px at 15% 0%, var(--cedula-alpha), transparent 60%), radial-gradient(circle 700px at 85% 10%, var(--ouro-alpha), transparent 60%); opacity: 0.6; transition: opacity 0.5s ease; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.enter { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+::selection { background: var(--cedula); color: #fff; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+button, input, select { font-family: inherit; }
+
+/* ==========================================================================
+   LOCK SCREEN (CADEADO)
+   ========================================================================== */
+#lockScreen { position: fixed; inset: 0; z-index: 99999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s; }
+.pin-display { display: flex; gap: 12px; margin-bottom: 40px; }
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); transition: all 0.2s; }
+.pin-dot.filled { background: var(--cedula); border-color: var(--cedula); box-shadow: 0 0 10px var(--cedula-alpha); transform: scale(1.2); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.pin-btn { width: 70px; height: 70px; border-radius: 50%; background: var(--bg-1); border: 1px solid var(--line); color: var(--ink); font-size: 24px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
+.pin-btn:active { background: var(--bg-2); transform: scale(0.9); }
+.pin-error { color: var(--coral); margin-top: 20px; font-size: 14px; opacity: 0; font-weight: 600; }
+.shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-8px, 0, 0); } 40%, 60% { transform: translate3d(8px, 0, 0); } }
+
+/* ==========================================================================
+   TOPBAR
+   ========================================================================== */
+header { position: sticky; top: 0; z-index: 60; background: color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--line); }
+.topbar { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+@media (min-width: 1440px) { .topbar { max-width: 1440px; } }
+@media (min-width: 1800px) { .topbar { max-width: 1680px; } }
+.brand { display: flex; align-items: baseline; gap: 2px; }
+.brand .mark { font-family: var(--serif); font-weight: 700; font-size: 26px; color: var(--ink); letter-spacing: -0.5px; }
+.brand .mark em { font-style: italic; color: var(--cedula); }
+.brand-sub { font-family: var(--sans); font-size: 11px; color: var(--ink-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line); }
+.topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.icon-btn { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-1); color: var(--ink-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; font-size: 16px; box-shadow: var(--shadow-sm); }
+.icon-btn:hover { border-color: var(--cedula); color: var(--cedula); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.icon-btn:active { transform: translateY(0) scale(0.96); }
+.pill-btn { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--bg-1); color: var(--ink-dim); cursor: pointer; padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; transition: all 0.2s ease; box-shadow: var(--shadow-sm); }
+.pill-btn:hover { border-color: var(--cedula); color: var(--cedula); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.pill-btn.gold { border-color: var(--line); color: var(--ink); }
+.pill-btn.gold:hover { border-color: var(--ouro); color: var(--ouro); }
+.pill-btn .ico { display: none; }
+.month-picker { position: relative; }
+.month-btn { background: var(--bg-1); border: 1px solid var(--line); color: var(--ink); padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-transform: capitalize; display: flex; align-items: center; gap: 10px; transition: all 0.2s ease; box-shadow: var(--shadow-sm); }
+.month-btn:hover { border-color: var(--cedula); box-shadow: var(--shadow-md); }
+.month-btn .chev { font-size: 10px; color: var(--ink-faint); transition: transform 0.3s ease; }
+.month-btn.open .chev { transform: rotate(180deg); }
+.month-dropdown { position: absolute; top: calc(100% + 12px); right: 0; z-index: 80; background: var(--bg-1); border: 1px solid var(--line); border-radius: 16px; padding: 16px; width: 260px; box-shadow: var(--shadow-lg); display: none; opacity: 0; transform: translateY(-10px) scale(0.98); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); transform-origin: top right; }
+.month-dropdown.open { display: block; opacity: 1; transform: translateY(0) scale(1); }
+.month-dropdown-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.month-dropdown-head button { background: var(--bg-2); border: none; color: var(--ink-dim); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s; }
+.month-dropdown-head button:hover { background: var(--bg-3); color: var(--ink); }
+.month-dropdown-head .year-label { font-family: var(--sans); font-weight: 700; font-size: 14px; }
+.month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.month-grid button { background: transparent; border: 1px solid transparent; color: var(--ink-dim); padding: 10px 4px; border-radius: 10px; font-size: 12px; font-weight: 500; cursor: pointer; text-transform: capitalize; transition: all 0.2s ease; }
+.month-grid button:hover { background: var(--bg-2); color: var(--ink); }
+.month-grid button.selected { background: var(--cedula); color: #fff; font-weight: 700; box-shadow: 0 4px 12px var(--cedula-alpha); }
+.month-grid button.is-today { border-color: var(--ouro); }
+/* (Classe .swatch-input antiga removida — os campos de cor agora usam
+   .color-swatch-visual, ver abaixo, que não depende da renderização
+   nativa do navegador para o input[type=color].) */
+
+/* Seletor de cor com aparência 100% controlada por nós — o Safari/iOS ignora
+   appearance:none em input[type=color] em muitas versões, então escondemos
+   o input real (que ainda abre o seletor nativo ao tocar) e desenhamos o
+   quadrado visível com um <label>, sem depender do estilo do navegador. */
+.color-swatch-visual {
+  display: block; width: 56px; height: 48px; border-radius: 12px;
+  border: 1px solid var(--line); cursor: pointer; overflow: hidden;
+  position: relative; flex-shrink: 0;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transform: none;
+}
+.color-swatch-visual:focus-within {
+  border-color: var(--cedula);
+  box-shadow: 0 0 0 3px var(--cedula-alpha);
+}
+.color-swatch-visual input[type="color"] {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; border: none; padding: 0; margin: 0;
+}
+
+/* ==========================================================================
+   HERO STATS & MAIN
+   ========================================================================== */
+main { max-width: 1200px; margin: 0 auto; padding: 40px 24px 100px; position: relative; z-index: 1; }
+@media (min-width: 1440px) { main { max-width: 1440px; } }
+@media (min-width: 1800px) { main { max-width: 1680px; } }
+.hero { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 40px; }
+@media (max-width: 1024px) { .hero { grid-template-columns: 1fr 1fr; } }
+
+.stat-card {
+  background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 20px 18px; position: relative; overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-sm);
+  container-type: inline-size; /* habilita as unidades cqi abaixo */
+}
+.stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--ink-faint); }
+.stat-card .eyebrow { font-family: var(--sans); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-dim); font-weight: 600; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+
+/* NÚMERO EM DESTAQUE — escala com a largura real do card via cqi (container query units).
+   Sem JS, sem timing, reage instantaneamente a resize/tema/qualquer mudança de layout. */
+.stat-card .big {
+  font-family: var(--serif); font-weight: 700;
+  font-size: clamp(19px, 12cqi, 52px);
+  letter-spacing: -0.02em; line-height: 1;
+  white-space: nowrap;
+  display: block; width: 100%;
+}
+.stat-card.balance .big { 
+  background: linear-gradient(135deg, var(--success) 0%, #34d399 100%); 
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+}
+.stat-card.balance .big.negative { 
+  background: linear-gradient(135deg, var(--coral) 0%, #f87171 100%); 
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+}
+
+.stat-card .foot { font-size: 13px; color: var(--ink-faint); margin-top: 10px; font-weight: 500; }
+.stat-card .foot b { color: var(--ink); font-weight: 700; }
+.stat-card.primary { background: linear-gradient(135deg, var(--bg-2) 0%, var(--bg-1) 100%); border: 1px solid var(--line); }
+.stat-card.primary .big { color: var(--ink); }
+.usage-track { height: 5px; background: var(--bg-2); border-radius: 99px; margin-top: 4px; overflow: hidden; border: inset 1px rgba(0,0,0,0.1); }
+.usage-fill { height: 100%; border-radius: 99px; background: var(--success); transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* BANNER AUDITORIA */
+.audit-banner { display: none; background: var(--ouro-alpha); border: 1px solid var(--ouro); border-radius: 16px; padding: 16px; margin-bottom: 24px; animation: fadeUp 0.5s ease; align-items: center; gap: 16px; }
+.audit-banner .ico { font-size: 24px; }
+.audit-banner .txt { flex: 1; font-size: 13px; color: var(--ink); line-height: 1.4; }
+.audit-banner .txt strong { color: var(--ouro); }
+
+/* ==========================================================================
+   WORKSPACE & PANELS
+   ========================================================================== */
+.workspace { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+@media (max-width: 1024px) { .workspace { grid-template-columns: 1fr; } }
+.panel { background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm); transition: border-color 0.3s, box-shadow 0.3s; }
+.panel + .panel { margin-top: 24px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+.panel-head h2 { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 10px; color: var(--ink); }
+.panel-head h2 .n { font-family: var(--sans); font-size: 12px; color: var(--ink); background: var(--bg-2); padding: 4px 10px; border-radius: 99px; font-weight: 700; }
+
+/* ==========================================================================
+   METAS (GOALS)
+   ========================================================================== */
+.goal-card { background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 12px; position: relative; overflow: hidden; transition: all 0.3s ease; box-shadow: var(--shadow-sm); }
+.goal-card.completed { border-color: var(--ouro); background: var(--ouro-alpha); }
+.goal-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.goal-name { color: var(--ink); display: flex; align-items: center; gap: 6px; font-size: 14px;}
+.goal-nums { font-family: var(--mono); color: var(--ink-dim); font-size: 12px; }
+.goal-track { height: 8px; background: var(--bg-2); border-radius: 99px; overflow: hidden; margin-bottom: 14px; border: inset 1px rgba(0,0,0,0.05); }
+.goal-fill { height: 100%; background: var(--cedula); border-radius: 99px; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+.goal-card.completed .goal-fill { background: var(--ouro); }
+.goal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.goal-btn { background: var(--bg-1); border: 1px solid var(--line); color: var(--ink-dim); padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.goal-btn:hover { border-color: var(--cedula); color: var(--cedula); }
+.goal-btn.add { background: var(--success-alpha); color: var(--success); border-color: var(--success-dim); }
+.goal-btn.add:hover { background: var(--success); color: #fff; }
+
+.celebration-box { background: var(--bg-1); border: 2px solid var(--ouro); border-radius: 28px; padding: 40px 24px; text-align: center; max-width: 360px; width: 100%; box-shadow: 0 24px 60px rgba(245, 158, 11, 0.4); animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; position: relative; overflow: hidden; margin: 0 20px; }
+.celebration-box::before { content: ''; position: absolute; inset: -50%; background: conic-gradient(from 0deg, transparent, var(--ouro-alpha), transparent); animation: spin 4s linear infinite; z-index: 0; pointer-events: none; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.celebration-box > * { position: relative; z-index: 1; }
+.celebration-box .trophy { font-size: 72px; margin-bottom: 16px; animation: bounce 1s infinite alternate; text-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px) scale(1.05); } }
+
+/* ==========================================================================
+   FORMULÁRIOS & FILTROS
+   ========================================================================== */
+.form-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.f { display: flex; flex-direction: column; gap: 8px; }
+.f label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink-dim); }
+.f input[type=text], .f input[type=number], .f select { background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; outline: none; transition: all 0.2s ease; width: 100%; }
+.f input:focus, .f select:focus { border-color: var(--cedula); background: var(--bg-1); box-shadow: 0 0 0 4px var(--cedula-alpha); }
+.f.c5 { grid-column: span 5; } .f.c4 { grid-column: span 4; } .f.c3 { grid-column: span 3; } .f.c6 { grid-column: span 6; } .f.c12 { grid-column: span 12; } .f.c2 { grid-column: span 2; } .f.c8 { grid-column: span 8; }
+.check-pill { display: flex; align-items: center; gap: 8px; cursor: pointer; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; height: 46px; font-size: 13px; font-weight: 600; color: var(--ink-dim); transition: all 0.2s ease; white-space: nowrap; user-select: none; }
+.check-pill:hover { border-color: var(--ink-faint); }
+.check-pill input { accent-color: var(--success); width: 16px; height: 16px; cursor: pointer; }
+.check-pill.checked { border-color: var(--success); color: var(--success); background: var(--success-alpha); }
+.submit-row { display: flex; gap: 12px; margin-top: 20px; align-items: center; }
+.btn-primary { background: var(--success); color: #ffffff; border: none; padding: 14px 28px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px var(--success-alpha); }
+.btn-primary:hover { background: var(--success-dim); transform: translateY(-2px); box-shadow: 0 6px 16px var(--success-alpha); }
+.btn-primary:active { transform: translateY(0) scale(0.97); }
+.btn-cancel { background: transparent; border: 1px solid var(--line); color: var(--ink-dim); padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.btn-cancel:hover { border-color: var(--coral); color: var(--coral); background: var(--coral-alpha); }
+.search-wrap { position: relative; max-width: 260px; flex: 1; }
+@media (min-width: 1024px) { .search-wrap { max-width: 380px; } }
+@media (min-width: 1440px) { .search-wrap { max-width: 460px; } }
+.search-wrap input { width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: 10px 14px 10px 36px; border-radius: 12px; font-size: 13px; outline: none; transition: all 0.2s ease; }
+.search-wrap input:focus { border-color: var(--cedula); box-shadow: 0 0 0 4px var(--cedula-alpha); }
+.search-wrap .ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-dim); font-size: 14px; }
+.filter-chip { display: none; align-items: center; gap: 8px; background: var(--cedula-alpha); color: var(--cedula); border: 1px solid var(--cedula); padding: 8px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; animation: popIn 0.2s ease; }
+.filter-chip.show { display: inline-flex; }
+.filter-chip button { background: none; border: none; color: inherit; cursor: pointer; font-size: 14px; font-weight: bold; transition: transform 0.2s; }
+.filter-chip button:hover { transform: rotate(90deg); }
+
+/* ==========================================================================
+   TABELA (DESKTOP)
+   ========================================================================== */
+.tx-table-wrap { max-height: 600px; overflow-y: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-md); border: 1px solid var(--line); overflow-x: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.tx-table-wrap input, .tx-table-wrap textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+table { width: 100%; border-collapse: collapse; }
+thead th { position: sticky; top: 0; background: var(--bg-2); z-index: 5; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-faint); font-weight: 700; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+tbody tr { transition: background 0.2s ease; position: relative; }
+tbody tr:hover { background: var(--bg-2); }
+tbody td { padding: 16px; font-size: 14px; vertical-align: middle; border-bottom: 1px solid var(--line); }
+.tx-bar { width: 4px; height: 24px; border-radius: 4px; display: block; transition: all 0.2s ease; }
+.tx-desc { font-weight: 600; color: var(--ink); font-size: 14px; }
+.tx-desc .tag-recur { color: var(--ouro); margin-left: 8px; font-size: 12px; display: inline-block; }
+.tx-group-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; background: var(--bg); border: 1px solid var(--line); color: var(--ink-dim); padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.tx-group-tag:hover { border-color: var(--cedula); color: var(--cedula); }
+.tx-group-tag button { background: none; border: none; color: inherit; cursor: pointer; padding: 0; margin-left: 4px; }
+.cat-chip { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; display: inline-block; transform: none; -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) and (pointer: fine) {
+  tr:hover .tx-bar { width: 6px; height: 28px; }
+  .cat-chip:hover { transform: scale(1.05); }
+}
+.amount-cell { text-align: right; font-family: var(--mono); font-weight: 600; font-size: 14px; transition: color 0.2s; }
+.amount-cell.pending { color: var(--ouro); }
+.status-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; transition: transform 0.2s ease; }
+.status-btn:hover { transform: scale(1.2) rotate(-5deg); }
+.status-btn:active { transform: scale(1.4); }
+
+.row-actions { display: flex; gap: 6px; opacity: 0; transform: translateX(10px); transition: all 0.2s ease; justify-content: flex-end; }
+tr:hover .row-actions { opacity: 1; transform: translateX(0); }
+.row-actions button { background: var(--bg); border: 1px solid var(--line); color: var(--ink-dim); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.row-actions button:hover { border-color: var(--cedula); color: var(--cedula); transform: translateY(-2px); }
+.row-actions button.del:hover { border-color: var(--coral); color: var(--coral); }
+tr[draggable="true"] { cursor: grab; } tr[draggable="true"]:active { cursor: grabbing; }
+
+.empty-state { text-align: center; padding: 64px 24px; color: var(--ink-dim); font-size: 14px; font-weight: 500; }
+.empty-state .glyph { font-size: 36px; margin-bottom: 16px; opacity: 0.5; display: inline-block; animation: fadeUp 0.5s ease; }
+
+/* ==========================================================================
+   SIDEBAR & MODALS
+   ========================================================================== */
+.dropzone { border: 2px dashed var(--line); border-radius: var(--radius-md); padding: 16px; text-align: center; font-size: 12px; font-weight: 600; color: var(--ink-dim); margin-bottom: 16px; transition: all 0.2s ease; display: none; }
+.dropzone.show { display: block; animation: fadeUp 0.3s ease; }
+.dropzone.active { border-color: var(--coral); background: var(--coral-alpha); color: var(--coral); transform: scale(1.02); }
+.group-pill { display: flex; justify-content: space-between; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.group-pill:hover { border-color: var(--cedula); transform: translateX(4px); box-shadow: var(--shadow-sm); }
+.group-pill.drop-active { border-color: var(--cedula); background: var(--cedula-alpha); transform: scale(1.03); }
+.group-pill .amt { font-family: var(--mono); color: var(--ink); font-weight: 600; }
+.budget-row { margin-bottom: 16px; cursor: pointer; }
+.budget-row:hover .budget-name { color: var(--cedula); }
+.budget-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.budget-name { color: var(--ink); transition: color 0.2s; }
+.budget-nums { font-family: var(--mono); color: var(--ink-dim); font-weight: 500; }
+.budget-nums.over { color: var(--coral); font-weight: 700; }
+.budget-track { height: 6px; background: var(--bg-2); border-radius: 99px; overflow: hidden; border: inset 1px rgba(0,0,0,0.05); }
+.budget-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+.chart-tabs { display: flex; background: var(--bg-2); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+.chart-tabs button { flex: 1; background: none; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--ink-faint); cursor: pointer; transition: all 0.2s ease; }
+.chart-tabs button.active { background: var(--bg-1); color: var(--cedula); box-shadow: var(--shadow-sm); }
+.chart-tabs button:hover:not(.active) { color: var(--ink); }
+.chart-wrap { position: relative; width: 100%; max-width: 240px; aspect-ratio: 1; margin: 0 auto; }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 200; padding: 24px; opacity: 0; transition: all 0.3s ease; }
+/* Modal de confirmação pode nascer de dentro de outro modal (ex: excluir categoria
+   dentro do modal de Categorias) — precisa ficar sempre por cima dos demais. */
+#confirmOverlay { z-index: 500; }
+.overlay.open { display: flex; opacity: 1; }
+.modal { background: var(--bg-1); border: 1px solid var(--line); border-radius: 24px; padding: 32px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; overflow-x: hidden; transform: scale(0.95) translateY(10px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-lg); }
+.overlay.open .modal { transform: scale(1) translateY(0); }
+.modal.wide { max-width: 860px; }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+.modal-head h3 { font-family: var(--serif); font-size: 24px; font-weight: 600; margin: 0 0 4px; color: var(--ink); }
+.modal-head p { font-size: 14px; color: var(--ink-dim); margin: 0; }
+.modal-close { background: var(--bg-2); border: none; color: var(--ink-dim); width: 36px; height: 36px; border-radius: 12px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.modal-close:hover { background: var(--coral-alpha); color: var(--coral); transform: rotate(90deg); }
+.mini-form { display: flex; gap: 12px; background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--line); margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.mini-form input { background: var(--bg-1); border: 1px solid var(--line); color: var(--ink); padding: 12px 16px; border-radius: 10px; font-size: 14px; outline: none; flex: 1; min-width: 120px; }
+.mini-form input:focus { border-color: var(--cedula); box-shadow: 0 0 0 3px var(--cedula-alpha); }
+.list-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; font-size: 14px; transition: all 0.2s ease; }
+.list-row:hover { border-color: var(--cedula); transform: translateX(2px); }
+.list-row .left { display: flex; align-items: center; gap: 12px; flex-direction: row; }
+.list-row .left-col { display: flex; flex-direction: column; }
+.list-row .swatch { width: 16px; height: 16px; border-radius: 6px; }
+.list-row .name { font-weight: 600; color: var(--ink); }
+.list-row .sub { font-size: 12px; color: var(--ink-dim); font-weight: 500; margin-top: 2px; }
+.list-row .right { display: flex; align-items: center; gap: 12px; }
+.list-row .val { font-family: var(--mono); font-weight: 600; color: var(--success); }
+.row-icon-btn { background: var(--bg-1); border: 1px solid var(--line); color: var(--ink-dim); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.row-icon-btn:hover { border-color: var(--cedula); color: var(--cedula); }
+.row-icon-btn.del:hover { border-color: var(--coral); color: var(--coral); }
+.bi-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.bi-card { border-radius: 20px; padding: 24px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.bi-card .lbl { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.bi-card .val { font-family: var(--serif); font-size: 32px; font-weight: 600; line-height: 1; }
+.bi-card.inc { background: var(--success-alpha); border-color: var(--success-dim); }
+.bi-card.inc .lbl, .bi-card.inc .val { color: var(--success); }
+.bi-card.exp { background: var(--coral-alpha); border-color: var(--coral); }
+.bi-card.exp .lbl, .bi-card.exp .val { color: var(--coral); }
+.bi-card.ret { background: var(--ouro-alpha); border-color: var(--ouro-dim); }
+.bi-card.ret .lbl, .bi-card.ret .val { color: var(--ouro); }
+.toast { position: fixed; bottom: 32px; right: 32px; z-index: 300; background: var(--bg-1); border: 1px solid var(--line); color: var(--ink); padding: 16px 20px; border-radius: 16px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 16px; transform: translateY(120%) scale(0.95); opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-lg); }
+.toast.show { transform: translateY(0) scale(1); opacity: 1; }
+.toast .dot { width: 8px; height: 8px; border-radius: 99px; background: var(--success); flex-shrink: 0; animation: pulseRing 1.6s ease-out infinite; }
+@keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); } 100% { box-shadow: 0 0 0 12px transparent; } }
+
+[contenteditable] { outline: none; transition: background 0.2s, padding 0.2s; border-radius: 8px; padding: 2px 6px; margin: -2px -6px; }
+[contenteditable]:hover { background: var(--bg-2); }
+[contenteditable]:focus { background: var(--bg-2); box-shadow: 0 0 0 2px var(--cedula-alpha); }
+.kbd-hint { font-family: var(--mono); font-size: 10px; color: var(--ink-dim); background: var(--bg-2); border: 1px solid var(--line); padding: 3px 6px; border-radius: 6px; margin-left: 4px; }
+
+/* ==========================================================================
+   RESPONSIVIDADE MOBILE (VERTICAL EXCELENCE - NATIVE APP FEEL)
+   ========================================================================== */
+@media (max-width: 768px) {
+  main { padding: 16px 12px 100px; }
+  .topbar { display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; }
+  .brand-sub { display: none; }
+  .brand { width: 100%; justify-content: center; }
+  
+  .topbar-actions { display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; width: 100%; }
+  .month-picker { grid-column: 1; grid-row: 1; min-width: 0; }
+  .month-btn { width: 100%; height: 48px; padding: 0 12px; font-size: 14px; justify-content: space-between; }
+  #btnYearly { grid-column: 2; grid-row: 1; width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 14px; }
+  #btnYearly .txt { display: none !important; }
+  #btnYearly .ico { display: block !important; font-size: 20px !important; }
+  #btnSettings { grid-column: 3; grid-row: 1; width: 48px; height: 48px; margin: 0; border-radius: 14px; font-size: 20px; }
+  #btnInstallApp { grid-column: 4; grid-row: 1; width: 48px; height: 48px; margin: 0; border-radius: 14px; font-size: 20px; }
+  
+  .search-wrap { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: none; }
+  .search-wrap input { width: 100%; height: 48px; padding: 0 16px 0 44px; font-size: 16px; border-radius: 14px; }
+  .search-wrap .ico { left: 16px; font-size: 18px; }
+  .filter-chip { grid-column: 1 / -1; grid-row: 3; justify-content: center; }
+
+  .month-dropdown { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: 100vw; max-width: 100vw; border-radius: 28px 28px 0 0; transform: translateY(110%); box-shadow: 0 -10px 40px rgba(0,0,0,0.5); padding: 24px 20px calc(24px + env(safe-area-inset-bottom)); max-height: 85vh; overflow-y: auto; z-index: 999; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .month-dropdown.open { transform: translateY(0); }
+  .month-dropdown-head button { width: 44px; height: 44px; font-size: 20px; }
+  .month-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .month-grid button { padding: 14px 4px; font-size: 13px; }
+
+  .hero { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 16px 14px; border-radius: 18px; }
+  .stat-card .eyebrow { font-size: 10px; margin-bottom: 8px; }
+  .stat-card .foot { font-size: 11px; margin-top: 8px; }
+  
+  .panel { padding: 20px 16px; border-radius: 20px; max-width: 100%; }
+
+  /* TABELA MOBILE (CARDS DE TRANSAÇÃO) — LINHA FINA E COMPACTA, via CSS Grid
+     Linha 1: status + descrição + grupo + categoria
+     Linha 2: valor + editar/excluir
+     Os <td> viram "invisíveis" estruturalmente (display:contents) e cada
+     conteúdo é posicionado direto no grid do <tr> — layout previsível,
+     sem depender de wrap automático do flexbox. */
+  .tx-table-wrap { border: none; background: transparent; overflow: visible; max-height: none; margin: 0; }
+  .tx-table-wrap table, .tx-table-wrap tbody { display: block; width: 100%; }
+  .tx-table-wrap thead { display: none; }
+
+  .tx-table-wrap tr {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 8px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px 12px 10px 16px; margin-bottom: 8px; position: relative;
+    box-shadow: var(--shadow-sm);
+  }
+  .tx-table-wrap td { padding: 0; border: none; margin: 0; display: contents; }
+
+  /* barra de cor da categoria, fininha na lateral esquerda */
+  .tx-table-wrap td:nth-child(1) .tx-bar {
+    position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; height: auto;
+    border-radius: 0 4px 4px 0; pointer-events: none;
+  }
+
+  /* LINHA 1: status | descrição+grupo | categoria */
+  .status-btn { grid-row: 1; grid-column: 1; font-size: 17px !important; }
+
+  .tx-table-wrap td:nth-child(3) > * { grid-row: 1; grid-column: 2; }
+  .tx-desc-wrap {
+    display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden;
+  }
+  .tx-desc { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; min-width: 0; }
+  .tx-group-tag { font-size: 11px; padding: 2px 8px; margin-top: 0; flex-shrink: 0; white-space: nowrap; }
+
+  .cat-chip { grid-row: 1; grid-column: 3; font-size: 11px; padding: 3px 9px; white-space: nowrap; }
+
+  /* LINHA 2: valor | (vazio) | editar/excluir */
+  .amount-cell { grid-row: 2; grid-column: 1 / 3; font-size: 15px; font-weight: 700; margin-top: 8px; }
+  .row-actions { grid-row: 2; grid-column: 3; margin-top: 8px; opacity: 1; transform: none; justify-content: flex-end; gap: 6px; }
+  .row-actions button { width: 32px; height: 32px; font-size: 13px; border-radius: 9px; }
+
+  /* Em telas de toque o :hover pode permanecer ativo depois do toque.
+     A faixa da categoria deve continuar fina e nunca cobrir o card. */
+  .tx-table-wrap tr:hover .tx-bar { width: 4px; height: auto; }
+  .tx-table-wrap tr.tx-empty-row { display: block; padding: 0; }
+  .tx-table-wrap tr.tx-empty-row td { display: block; }
+  .tx-table-wrap tr.tx-empty-row .empty-state { width: 100%; }
+
+  .goal-actions .goal-btn { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .goal-actions .goal-btn.add { flex: 1; }
+  .goal-actions .goal-btn:not(.add) { width: 44px; flex: none; }
+
+  .overlay { padding: 0; align-items: flex-end; }
+  .modal { padding: 28px 20px; border-radius: 28px 28px 0 0; max-height: 90vh; width: 100%; margin: 0; }
+
+  /* A comemoração não é um bottom-sheet: fica centralizada no viewport. */
+  #celebrationOverlay.overlay {
+    align-items: center; justify-content: center;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  }
+  #celebrationOverlay .celebration-box {
+    margin: 0; max-height: calc(100dvh - 40px); overflow-y: auto;
+  }
+  .modal-close { width: 44px; height: 44px; font-size: 18px; border-radius: 14px; background: var(--bg-2); }
+  
+  .form-grid { display: flex; flex-direction: column; gap: 16px; }
+  .f { width: 100%; }
+  .f input, .f select { width: 100%; padding: 16px; font-size: 16px; border-radius: 14px; }
+  
+  #categoryOverlay .mini-form > div { flex-direction: column !important; align-items: stretch !important; gap: 16px !important; }
+  #categoryOverlay .mini-form > div > div { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+  #categoryOverlay input:not([type="color"]) { width: 100% !important; flex: none !important; padding: 16px !important; font-size: 16px !important; }
+  #categoryOverlay .color-swatch-visual { width: 56px !important; height: 48px !important; flex: none !important; }
+  
+  .mini-form { flex-direction: column; align-items: stretch; gap: 12px; padding: 20px 16px; border-radius: 20px; }
+  .mini-form input:not([type="color"]) { width: 100% !important; min-width: auto; padding: 16px !important; font-size: 16px; border-radius: 14px; }
+  .mini-form .color-swatch-visual { width: 56px !important; height: 48px !important; }
+  
+  .submit-row { flex-direction: column; gap: 12px; width: 100%; margin-top: 24px; }
+  .submit-row .btn-primary, .submit-row .btn-cancel { width: 100%; text-align: center; justify-content: center; padding: 18px; font-size: 16px; border-radius: 16px; }
+  .submit-row .kbd-hint, .submit-row span { display: none; }
+
+  .list-row { padding: 16px; border-radius: 16px; }
+  .row-icon-btn { width: 44px; height: 44px; border-radius: 12px; font-size: 16px; }
+  
+  #yearlyOverlay .modal-head { flex-direction: column; gap: 16px; align-items: stretch; }
+  #yearlyOverlay .modal-head > div:last-child { display: flex; justify-content: space-between; width: 100%; }
+  #yearSelector { flex: 1; margin-right: 12px; padding: 14px; border-radius: 14px; font-size: 16px; }
+  
+  .bi-cards { grid-template-columns: 1fr; gap: 12px; }
+  
+  .list-row.pin-setting { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+  .list-row.pin-setting .left { align-items: flex-start; }
+
+  .toast {
+    left: 12px; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 24px); justify-content: flex-start;
+  }
+}
+@media (max-width: 420px) {
+  .brand .mark { font-size: 21px; }
+  .modal-head h3 { font-size: 20px; }
+  .hero { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { padding: 13px 12px; }
+  .stat-card .eyebrow { font-size: 9px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen" style="display:none;">
+  <div class="brand" style="margin-bottom: 40px; transform: scale(1.2);">
+    <span class="mark" style="color:var(--ink);" id="lockTitlePart1">Cofre</span><span class="mark"><em style="color:var(--cedula);" id="lockTitlePart2">.</em></span>
+  </div>
+  <button id="btnBiometricUnlock" style="display:none; flex-direction:column; align-items:center; gap:8px; background:transparent; border:none; color:var(--ink); cursor:pointer; margin-bottom:28px;">
+    <span style="font-size:40px;">🔐</span>
+    <span style="font-size:13px; color:var(--ink-dim); font-weight:600;">Toque para desbloquear</span>
+  </button>
+  <div class="pin-display" id="pinDots">
+    <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="enterPin(1)">1</button><button class="pin-btn" onclick="enterPin(2)">2</button><button class="pin-btn" onclick="enterPin(3)">3</button>
+    <button class="pin-btn" onclick="enterPin(4)">4</button><button class="pin-btn" onclick="enterPin(5)">5</button><button class="pin-btn" onclick="enterPin(6)">6</button>
+    <button class="pin-btn" onclick="enterPin(7)">7</button><button class="pin-btn" onclick="enterPin(8)">8</button><button class="pin-btn" onclick="enterPin(9)">9</button>
+    <div></div><button class="pin-btn" onclick="enterPin(0)">0</button><button class="pin-btn" style="background:transparent; border:none;" onclick="clearPin()">⌫</button>
+  </div>
+  <div class="pin-error" id="pinError">Senha incorreta</div>
+</div>
+
+<header>
+  <div class="topbar">
+    <div style="display:flex; align-items:baseline;">
+      <div class="brand">
+        <span class="mark" id="titlePart1" contenteditable="true" spellcheck="false">Cofre</span><span class="mark"><em id="titlePart2" contenteditable="true" spellcheck="false">.</em></span>
+      </div>
+      <span class="brand-sub">controle mensal</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="search-wrap">
+        <span class="ico">🔍</span>
+        <input type="text" id="searchInput" placeholder="Buscar (Ctrl+F)">
+      </div>
+      <div class="month-picker">
+        <button type="button" class="month-btn" id="monthBtn">Agosto de 2026 <span class="chev">▾</span></button>
+        <div class="month-dropdown" id="monthDropdown">
+          <div class="month-dropdown-head">
+            <button type="button" id="yearPrev">‹</button>
+            <span class="year-label" id="yearLabel">2026</span>
+            <button type="button" id="yearNext">›</button>
+          </div>
+          <div class="month-grid" id="monthGrid"></div>
+        </div>
+      </div>
+      <button class="pill-btn gold" id="btnYearly" title="Visão anual">
+        <span class="txt">📊 Visão anual</span>
+        <span class="ico">📊</span>
+      </button>
+      <button class="icon-btn" id="btnSettings" title="Configurações">⚙</button>
+      <button class="icon-btn" id="btnInstallApp" title="Instalar como app" style="display:none;">⬇</button>
+      <div class="filter-chip" id="filterChip"><span id="filterChipLabel"></span><button id="filterChipClose">✕</button></div>
+    </div>
+  </div>
+</header>
+
+<main id="mainAppContent" style="display:none;">
+  <div id="auditBanner" class="audit-banner">
+    <span class="ico">⚠️</span>
+    <div class="txt">Pendências de meses anteriores encontradas. Finalize a conciliação financeira para manter a <strong>precisão operacional do sistema em 99.5%</strong>.</div>
+  </div>
+
+  <section class="hero">
+    <div class="stat-card primary enter" style="animation-delay:.02s; cursor:pointer" id="cardIncome" title="Clique para gerenciar entradas">
+      <div class="eyebrow"><span>Entradas do mês</span><span>+</span></div>
+      <div class="big" id="heroIncome">R$ 0</div>
+      <div class="foot"><b id="heroIncomeCount">0</b> fontes de renda ativas</div>
+    </div>
+    <div class="stat-card enter" style="animation-delay:.08s;">
+      <div class="eyebrow"><span>Já pago</span></div>
+      <div class="big" style="color:var(--success);" id="heroPaid">R$ 0</div>
+      <div class="foot"><b id="heroPaidCount">0</b> lançamentos quitados</div>
+    </div>
+    <div class="stat-card enter" style="animation-delay:.14s;">
+      <div class="eyebrow"><span>Pendente</span></div>
+      <div class="big" style="color:var(--ouro);" id="heroPending">R$ 0</div>
+      <div class="foot"><b id="heroPendingCount">0</b> em aberto</div>
+    </div>
+    <div class="stat-card balance enter" style="animation-delay:.2s;">
+      <div class="eyebrow"><span>Sobra do mês</span></div>
+      <div class="big" id="heroBalance">R$ 0</div>
+      <div class="usage-track"><div class="usage-fill" id="usageFill" style="width:0%"></div></div>
+    </div>
+  </section>
+
+  <div class="workspace">
+    <div>
+      <div class="panel enter" style="padding:0; overflow:hidden; animation-delay:.32s;">
+        <div style="padding:24px 28px;">
+          <div class="panel-head" style="margin-bottom:0;">
+            <h2>☰ Movimentações <span class="n" id="txCountBadge">0</span></h2>
+            <button class="btn-primary" id="btnOpenTxModal" style="padding:10px 18px; font-size:13px;">+ Lançamento</button>
+          </div>
+        </div>
+        <div class="tx-table-wrap" id="txTableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:4px"></th><th style="width:40px; text-align:center;">Status</th><th>Detalhes</th><th>Categoria</th><th style="text-align:right;">Valor</th><th style="width:90px; text-align:center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel enter" style="animation-delay:.24s;">
+        <div class="panel-head" style="margin-bottom: 16px;">
+          <h2>🎯 Metas</h2>
+          <button class="btn-primary" id="btnOpenGoalModal" style="padding:8px 14px; font-size:12px; border-radius:10px;">+ Meta</button>
+        </div>
+        <div id="goalsList"></div>
+      </div>
+
+      <div class="panel enter" style="animation-delay:.26s;">
+        <div class="panel-head"><h2>📁 Grupos</h2></div>
+        <div class="dropzone" id="unassignZone">Solte aqui para desvincular do grupo</div>
+        <div id="groupsList"></div>
+      </div>
+
+      <div class="panel enter" style="animation-delay:.32s;">
+        <div class="panel-head"><h2>◎ Orçamentos</h2></div>
+        <div id="budgetsList"></div>
+      </div>
+
+      <div class="panel enter" style="animation-delay:.38s;">
+        <div class="chart-tabs">
+          <button data-mode="category" class="active">Categorias</button>
+          <button data-mode="group">Grupos</button>
+          <button data-mode="individual">Maiores</button>
+        </div>
+        <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modais -->
+<div class="overlay" id="goalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3 id="goalFormTitle">Nova Meta</h3><p>Defina um objetivo para alcançar.</p></div>
+      <button class="modal-close" id="closeGoalModal">✕</button>
+    </div>
+    <form id="goalForm">
+      <input type="hidden" id="editGoalId">
+      <div class="form-grid">
+        <div class="f c8">
+          <label>Nome da Meta</label>
+          <input type="text" id="goalNameInput" placeholder="Ex: Reserva de Emergência" required>
+        </div>
+        <div class="f c4">
+          <label>Objetivo (R$)</label>
+          <input type="number" id="goalTargetInput" step="0.01" min="0.01" placeholder="1000,00" required>
+        </div>
+      </div>
+      <div class="submit-row">
+        <button type="submit" class="btn-primary">✓ Salvar Meta</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="goalFundOverlay">
+  <div class="modal" style="max-width: 360px;">
+    <div class="modal-head">
+      <div><h3>Guardar Dinheiro</h3><p id="fundGoalName">Adicionar fundos</p></div>
+      <button class="modal-close" id="closeGoalFundModal">✕</button>
+    </div>
+    <form id="goalFundForm">
+      <input type="hidden" id="fundGoalId">
+      <div class="f">
+        <label>Valor a guardar (R$)</label>
+        <input type="number" id="fundAmountInput" step="0.01" min="0.01" placeholder="0,00" required>
+      </div>
+      <div class="submit-row">
+        <button type="submit" class="btn-primary" style="background: var(--ouro); box-shadow: 0 4px 12px var(--ouro-alpha);">💰 Depositar na Meta</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="celebrationOverlay" style="z-index: 9999;">
+  <div class="celebration-box">
+    <div class="trophy">🏆</div>
+    <h2 style="font-family:var(--serif); font-size:28px; margin:0 0 8px; color:var(--ouro);">Meta Alcançada!</h2>
+    <p id="celebrationText" style="color:var(--ink-dim); margin-bottom:24px;">Você completou sua meta.</p>
+    <button class="btn-primary" id="btnCloseCelebration" style="width:100%; background:var(--ouro); color:#000;">Incrível!</button>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3>Configurações</h3><p>Ajustes visuais e backup de dados.</p></div>
+      <button class="modal-close" id="closeSettingsModal">✕</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="list-row pin-setting" style="margin:0; background:var(--bg-2);">
+        <div class="left">
+          <div class="left-col">
+            <span class="name">Cadeado Pessoal (PIN)</span>
+            <span class="sub">Exigir senha de 4 dígitos ao abrir</span>
+          </div>
+        </div>
+        <div class="right" style="width:100%;">
+          <input type="password" id="pinSetupInput" placeholder="Digite 4 números" inputmode="numeric" pattern="[0-9]{4}" autocomplete="new-password" style="width:100%; padding:12px; border-radius:12px; border:1px solid var(--line); background:var(--bg-1); color:var(--ink); text-align:center; font-family:var(--mono); font-size:18px; letter-spacing:8px;">
+          <button class="btn-primary" id="btnSavePin" style="padding:12px;">Ativar</button>
+        </div>
+      </div>
+      <div class="list-row pin-setting" id="biometricRow" style="margin:0; background:var(--bg-2); display:none;">
+        <div class="left">
+          <div class="left-col">
+            <span class="name">🔐 Face ID / Digital / Desbloqueio do celular</span>
+            <span class="sub">Use a biometria do aparelho em vez do PIN</span>
+          </div>
+        </div>
+        <div class="right" style="width:100%;">
+          <button class="btn-primary" id="btnSetupBiometric" style="padding:12px; width:100%;">Ativar</button>
+        </div>
+      </div>
+      <div class="list-row" style="margin:0;">
+        <div class="left"><span class="name">Cor de destaque</span></div>
+        <div class="right">
+          <label class="color-swatch-visual" id="colorPickerModalVisual" style="background:#10b981;" aria-label="Selecionar cor de destaque">
+            <input type="color" id="colorPickerModal" value="#10b981" aria-label="Cor de destaque">
+          </label>
+        </div>
+      </div>
+      <div class="list-row" style="margin:0;">
+        <div class="left"><span class="name">Tema visual</span></div>
+        <div class="right"><button class="icon-btn" id="btnThemeModal" style="width:44px; height:44px;">☾</button></div>
+      </div>
+      <div class="list-row" style="margin:0; cursor:pointer;" id="btnExportModal">
+        <div class="left">
+          <div class="left-col">
+            <span class="name">Exportar Backup</span>
+            <span class="sub">Salvar dados no dispositivo</span>
+          </div>
+        </div>
+        <div class="right" style="font-size:20px; color:var(--ink-dim);">⬇</div>
+      </div>
+      <div class="list-row" style="margin:0; cursor:pointer;" id="btnImportModal">
+        <div class="left">
+          <div class="left-col">
+            <span class="name">Importar Backup</span>
+            <span class="sub">Restaurar dados de um arquivo</span>
+          </div>
+        </div>
+        <div class="right" style="font-size:20px; color:var(--ink-dim);">⬆</div>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept="application/json" style="display:none">
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <div><h3 id="confirmTitle">Confirmar</h3><p id="confirmMsg"></p></div>
+      <button class="modal-close" id="closeConfirmModal">✕</button>
+    </div>
+    <div id="confirmExtraBtn" style="display:none; margin-top:8px;"></div>
+    <div style="display:flex; gap:12px; margin-top:8px;">
+      <button class="btn-cancel" id="confirmCancelBtn" style="flex:1;">Cancelar</button>
+      <button class="btn-primary" id="confirmOkBtn" style="flex:1;">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="incomeOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3>Fontes de Renda</h3><p>Salário, freelas, vale, bônus...</p></div>
+      <button class="modal-close" id="closeIncomeModal">✕</button>
+    </div>
+    <div class="mini-form">
+      <input type="text" id="newIncomeName" placeholder="Nome da fonte">
+      <input type="number" id="newIncomeAmount" placeholder="R$ 0,00" step="0.01">
+      <button class="btn-primary" id="addIncomeBtn" style="padding: 12px 16px;">+</button>
+    </div>
+    <div id="incomeList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="txOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <div><h3 id="formTitle">Novo lançamento</h3><p>Preencha os dados e salve.</p></div>
+      <button class="modal-close" id="closeTxModal">✕</button>
+    </div>
+    <div style="display:flex; gap:12px; margin-bottom:16px;">
+      <button class="pill-btn" id="btnOpenCategories" type="button">⚙ Categorias</button>
+      <button class="btn-cancel" id="btnCancelEdit" style="display:none;">Cancelar <span class="kbd-hint">Esc</span></button>
+    </div>
+    <form id="txForm">
+      <input type="hidden" id="editId">
+      <input type="hidden" id="editBatchId">
+      <div class="form-grid">
+        <div class="f c5">
+          <label>Descrição</label>
+          <input type="text" id="descInput" placeholder="Ex: Supermercado" required>
+        </div>
+        <div class="f c3">
+          <label>Valor (R$)</label>
+          <input type="number" id="amountInput" step="0.01" min="0.01" placeholder="0,00" required>
+        </div>
+        <div class="f c4">
+          <label>Categoria</label>
+          <select id="categoryInput"></select>
+        </div>
+        <div class="f c4">
+          <label>Grupo (opcional)</label>
+          <input type="text" id="groupInput" list="groupList" placeholder="Ex: Viagem SP">
+          <datalist id="groupList"></datalist>
+        </div>
+        <div class="f c2">
+          <label>Parcelas</label>
+          <input type="number" id="installmentsInput" min="1" max="120" step="1" inputmode="numeric" value="1">
+        </div>
+        <div class="f c3">
+          <label>&nbsp;</label>
+          <label class="check-pill" id="fixedPillLabel"><input type="checkbox" id="isFixedInput"> Recorrente</label>
+        </div>
+        <div class="f c3">
+          <label>&nbsp;</label>
+          <label class="check-pill checked" id="paidPillLabel"><input type="checkbox" id="paidInput" checked> Pago</label>
+        </div>
+      </div>
+      <div class="submit-row">
+        <button type="submit" class="btn-primary">✓ Salvar lançamento</button>
+        <span style="font-size:12px; color:var(--ink-faint); margin-left:8px;"><span class="kbd-hint">Alt+N</span> foco rápido</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="categoryOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3>Categorias</h3><p>Organize centros de custo e defina tetos.</p></div>
+      <button class="modal-close" id="closeCategoryModal">✕</button>
+    </div>
+    <div class="mini-form" style="flex-direction:column; align-items:stretch; gap:16px;">
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <input type="text" id="newCatName" placeholder="Nome da categoria" style="flex:2 1 140px;">
+        <input type="number" id="newCatBudget" placeholder="Teto R$" step="0.01" style="flex:1 1 90px;">
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase;">Cor</span>
+          <label class="color-swatch-visual" id="newCatColorVisual" style="background:#10b981;" aria-label="Selecionar cor da categoria">
+            <input type="color" id="newCatColor" value="#10b981" aria-label="Cor da categoria">
+          </label>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <button class="btn-cancel" id="cancelCatEditBtn" style="display:none;">Cancelar</button>
+          <button class="btn-primary" id="saveCatBtn" style="padding:10px 20px;">Salvar Categoria</button>
+        </div>
+      </div>
+    </div>
+    <div id="categoryList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="yearlyOverlay">
+  <div class="modal wide">
+    <div class="modal-head">
+      <div><h3>Visão Anual</h3><p>Panorama de entradas e saídas ao longo do ano.</p></div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <select id="yearSelector" style="background:var(--bg-2); border:1px solid var(--line); color:var(--ink); padding:10px 16px; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; outline:none;"></select>
+        <button class="modal-close" id="closeYearlyModal">✕</button>
+      </div>
+    </div>
+    <div class="bi-cards">
+      <div class="bi-card inc"><div class="lbl">Renda total no ano</div><div class="val" id="biIncome">R$ 0</div></div>
+      <div class="bi-card exp"><div class="lbl">Gasto total no ano</div><div class="val" id="biExpense">R$ 0</div></div>
+      <div class="bi-card ret"><div class="lbl">Economia retida</div><div class="val" id="biRetained">R$ 0</div></div>
+    </div>
+    <div class="bi-chart-wrap" style="position:relative; height:320px;"><canvas id="yearlyChart"></canvas></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="dot"></span>
+  <span id="toastMsg">Salvo</span>
+  <button id="toastUndoBtn" class="btn-cancel" style="display:none; padding: 6px 12px; font-size:12px; height:auto;">Desfazer</button>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+const STORAGE_KEY = "cofre_v1";
+const PALETTE = ["#10b981","#f59e0b","#ef4444","#3b82f6","#8b5cf6","#ec4899","#14b8a6","#d97706","#6366f1","#b45309"];
+const MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+const MONTH_NAMES_FULL = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+
+// Só habilita o drag-and-drop quando há ponteiro fino com hover real.
+// Isso evita o arraste quebrado no celular sem desativá-lo em notebooks híbridos.
+const canNativeDrag = window.matchMedia
+  ? window.matchMedia("(hover: hover) and (pointer: fine)").matches
+  : !(('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+
+let appData = defaultData();
+let currentMonth = "";
+let donutChart = null, yearlyChart = null;
+let draggedId = null;
+let lastDeleted = null, lastDeletedMonth = null;
+let activeFilter = {type:"all", value:""};
+let editingCategoryIdx = null;
+let chartMode = "category";
+let enteredPin = "";
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+function finiteNumber(value, fallback = 0){
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+function roundMoney(value){ return Math.round((finiteNumber(value, 0) + Number.EPSILON) * 100) / 100; }
+function normalizeHexColor(value, fallback = "#10b981"){
+  const hex = String(value || "").trim();
+  return /^#[0-9a-f]{6}$/i.test(hex) ? hex.toLowerCase() : fallback;
+}
+function localDateISO(date = new Date()){
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
+}
+function dateForMonth(monthKey){
+  const match = /^(\d{4})-(\d{2})$/.exec(String(monthKey || ""));
+  if(!match) return localDateISO();
+  const y = Number(match[1]), m = Number(match[2]);
+  if(m < 1 || m > 12) return localDateISO();
+  const maxDay = new Date(y, m, 0).getDate();
+  const day = Math.min(new Date().getDate(), maxDay);
+  return `${y}-${String(m).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+}
+
+function defaultData(){
+  return {
+    settings:{ theme:"dark", accent:"#10b981", title1:"Cofre", title2:".", chartMode:"category", pin:"" },
+    fixedExpenses: [],
+    goals: [],
+    categories:[
+      {name:"Moradia", color:"#3b82f6", budget:1500},
+      {name:"Alimentação", color:"#f59e0b", budget:800},
+      {name:"Transporte", color:"#d97706", budget:400},
+      {name:"Diversão", color:"#8b5cf6", budget:300},
+      {name:"Contas fixas", color:"#14b8a6", budget:600},
+      {name:"Metas", color:"#f59e0b", budget:0},
+      {name:"Outros", color:"#10b981", budget:0}
+    ],
+    months:{}
+  };
+}
+
+function ensureMonth(key){
+  if(!appData.months || typeof appData.months !== "object") appData.months = {};
+  if(!appData.months[key] || typeof appData.months[key] !== "object") appData.months[key] = {incomes:[], expenses:[]};
+  if(!Array.isArray(appData.months[key].incomes)) appData.months[key].incomes = [];
+  if(!Array.isArray(appData.months[key].expenses)) appData.months[key].expenses = [];
+}
+
+function getCatData(name){
+  return appData.categories.find(c=>c.name===name) || {name, color:"#71717a", budget:0};
+}
+
+// Sincroniza o quadrado visual de cor (label) com o valor real do input
+// escondido — necessário porque o input agora fica invisível de propósito.
+function syncColorSwatch(inputId){
+  const input = document.getElementById(inputId);
+  const visual = document.getElementById(inputId + "Visual");
+  if(input && visual) visual.style.background = input.value;
+}
+
+function fmt(n){
+  const value = finiteNumber(n, 0);
+  return value.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function addMonthsStr(monthKey, n){
+  const [y,m] = monthKey.split("-").map(Number);
+  const d = new Date(y, m-1+n, 1);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+}
+
+function normalizeAppData(raw){
+  const base = defaultData();
+  const data = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : base;
+
+  const rawSettings = data.settings && typeof data.settings === "object" && !Array.isArray(data.settings) ? data.settings : {};
+  data.settings = {...base.settings, ...rawSettings};
+  data.settings.theme = data.settings.theme === "light" ? "light" : "dark";
+  data.settings.accent = normalizeHexColor(data.settings.accent, base.settings.accent);
+  data.settings.title1 = String(data.settings.title1 || "Cofre").trim() || "Cofre";
+  data.settings.title2 = data.settings.title2 === undefined ? "." : String(data.settings.title2);
+  data.settings.chartMode = ["category","group","individual"].includes(data.settings.chartMode) ? data.settings.chartMode : "category";
+  const savedPin = String(data.settings.pin || "");
+  data.settings.pin = /^\d{4}$/.test(savedPin) ? savedPin : "";
+  if(typeof data.settings.biometricCredId !== "string") data.settings.biometricCredId = "";
+
+  const seenCategories = new Set();
+  data.categories = (Array.isArray(data.categories) ? data.categories : base.categories)
+    .filter(c => c && typeof c === "object")
+    .map(c => ({
+      ...c,
+      name: String(c.name || "").trim(),
+      color: normalizeHexColor(c.color, "#71717a"),
+      budget: Math.max(0, roundMoney(c.budget))
+    }))
+    .filter(c => {
+      if(!c.name) return false;
+      const key = c.name.toLocaleLowerCase("pt-BR");
+      if(seenCategories.has(key)) return false;
+      seenCategories.add(key);
+      return true;
+    });
+  if(data.categories.length === 0) data.categories = [{name:"Outros", color:"#10b981", budget:0}];
+
+  data.fixedExpenses = (Array.isArray(data.fixedExpenses) ? data.fixedExpenses : [])
+    .filter(f => f && typeof f === "object")
+    .map(f => ({...f, desc:String(f.desc || "").trim(), amount:Math.max(0, roundMoney(f.amount)), category:String(f.category || "Outros")}))
+    .filter(f => f.desc && f.amount > 0);
+
+  data.goals = (Array.isArray(data.goals) ? data.goals : [])
+    .filter(g => g && typeof g === "object")
+    .map(g => {
+      const target = Math.max(0.01, roundMoney(g.target));
+      const current = Math.max(0, roundMoney(g.current));
+      return {...g, id:String(g.id || uid()), name:String(g.name || "Meta").trim() || "Meta", target, current, completed:current >= target};
+    });
+
+  if(!data.months || typeof data.months !== "object" || Array.isArray(data.months)) data.months = {};
+  Object.keys(data.months).forEach(key => {
+    const month = data.months[key] && typeof data.months[key] === "object" ? data.months[key] : {};
+    month.incomes = (Array.isArray(month.incomes) ? month.incomes : [])
+      .filter(i => i && typeof i === "object")
+      .map(i => ({...i, id:String(i.id || uid()), name:String(i.name || "Entrada").trim() || "Entrada", amount:Math.max(0, roundMoney(i.amount))}));
+    month.expenses = (Array.isArray(month.expenses) ? month.expenses : [])
+      .filter(e => e && typeof e === "object")
+      .map(e => ({
+        ...e,
+        id:String(e.id || uid()),
+        date:typeof e.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date) ? e.date : dateForMonth(key),
+        desc:String(e.desc || "Lançamento").trim() || "Lançamento",
+        amount:Math.max(0, roundMoney(e.amount)),
+        category:String(e.category || "Outros"),
+        group:String(e.group || ""),
+        paid:Boolean(e.paid),
+        isFixed:Boolean(e.isFixed)
+      }));
+    data.months[key] = month;
+  });
+
+  return data;
+}
+
+function loadData(){
+  let loaded = defaultData();
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) loaded = JSON.parse(raw);
+  }catch(e){
+    console.warn("Não foi possível ler os dados salvos:", e);
+  }
+  appData = normalizeAppData(loaded);
+}
+function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+    return true;
+  }catch(e){
+    console.error("Não foi possível salvar os dados:", e);
+    showToast("Não foi possível salvar. Verifique o espaço do dispositivo.");
+    return false;
+  }
+}
+
+let toastTimer;
+function showToast(msg, canUndo){
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  document.getElementById("toastUndoBtn").style.display = canUndo ? "inline-block" : "none";
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove("show"), 4000);
+}
+document.getElementById("toastUndoBtn").addEventListener("click", ()=>{
+  if(lastDeleted && lastDeletedMonth){
+    ensureMonth(lastDeletedMonth);
+    appData.months[lastDeletedMonth].expenses.push(lastDeleted);
+    adjustGoalBalanceForExpense(lastDeleted, finiteNumber(lastDeleted.amount, 0));
+    saveData(); lastDeleted=null; lastDeletedMonth=null;
+    showToast("Restaurado");
+    render();
+  }
+});
+
+// Modal de confirmação próprio — substitui o confirm() nativo, que é
+// instável em navegadores mobile e dentro de PWA instalado (standalone).
+const confirmOverlay = document.getElementById("confirmOverlay");
+let _confirmCallback = null;
+let _confirmExtraCallback = null;
+function confirmDialog({title, message, onConfirm, extraLabel, onExtra}){
+  document.getElementById("confirmTitle").textContent = title || "Confirmar";
+  document.getElementById("confirmMsg").textContent = message || "";
+  _confirmCallback = onConfirm;
+  _confirmExtraCallback = onExtra || null;
+  const extraWrap = document.getElementById("confirmExtraBtn");
+  if(extraLabel && onExtra){
+    extraWrap.style.display = "block";
+    extraWrap.innerHTML = `<button class="pill-btn" id="confirmExtraBtnInner" style="width:100%; justify-content:center;">${extraLabel}</button>`;
+    document.getElementById("confirmExtraBtnInner").onclick = ()=>{
+      const cb = _confirmExtraCallback;
+      closeConfirmDialog();
+      if(cb) cb();
+    };
+  } else {
+    extraWrap.style.display = "none";
+    extraWrap.innerHTML = "";
+  }
+  confirmOverlay.classList.add("open");
+}
+function closeConfirmDialog(){
+  confirmOverlay.classList.remove("open");
+  _confirmCallback = null;
+  _confirmExtraCallback = null;
+}
+document.getElementById("confirmOkBtn").addEventListener("click", ()=>{
+  const cb = _confirmCallback;
+  closeConfirmDialog();
+  if(cb) cb();
+});
+document.getElementById("confirmCancelBtn").addEventListener("click", closeConfirmDialog);
+document.getElementById("closeConfirmModal").addEventListener("click", closeConfirmDialog);
+confirmOverlay.addEventListener("click", e=>{ if(e.target===confirmOverlay) closeConfirmDialog(); });
+
+function applyTheme(theme){
+  document.documentElement.classList.toggle("light", theme==="light");
+  const btn = document.getElementById("btnThemeModal");
+  if(btn) btn.textContent = theme==="dark" ? "☾" : "☀";
+}
+function toggleTheme(){
+  appData.settings.theme = appData.settings.theme==="dark" ? "light":"dark";
+  applyTheme(appData.settings.theme);
+  saveData();
+  render();
+}
+function relativeLuminance(hex){
+  const c = hex.replace("#","");
+  const r = parseInt(c.substr(0,2),16)/255, g = parseInt(c.substr(2,2),16)/255, b = parseInt(c.substr(4,2),16)/255;
+  const lin = v => v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+  return 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
+}
+function darken(hex, amount){
+  const c = hex.replace("#","");
+  let r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  r = Math.max(0, Math.round(r*(1-amount)));
+  g = Math.max(0, Math.round(g*(1-amount)));
+  b = Math.max(0, Math.round(b*(1-amount)));
+  return "#" + [r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("");
+}
+function applyAccent(hex, save){
+  hex = normalizeHexColor(hex, "#10b981");
+  document.documentElement.style.setProperty("--cedula", hex);
+  const lum = relativeLuminance(hex);
+  const textSafe = lum > 0.55 ? darken(hex, 0.45) : hex;
+  document.documentElement.style.setProperty("--cedula-dim", textSafe);
+  
+  const c = hex.replace("#","");
+  const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  document.documentElement.style.setProperty("--cedula-alpha", `rgba(${r}, ${g}, ${b}, 0.2)`);
+  
+  if(save){ appData.settings.accent = hex; saveData(); }
+}
+
+["titlePart1","titlePart2"].forEach(id=>{
+  document.getElementById(id).addEventListener("blur", ()=>{
+    appData.settings.title1 = document.getElementById("titlePart1").innerText.trim() || "Cofre";
+    appData.settings.title2 = document.getElementById("titlePart2").innerText.trim();
+    saveData();
+  });
+  document.getElementById(id).addEventListener("keydown", e=>{
+    if(e.key==="Enter"){ e.preventDefault(); e.target.blur(); }
+  });
+});
+
+function updateCategoryDropdown(){
+  const sel = document.getElementById("categoryInput");
+  sel.innerHTML = "";
+  appData.categories.forEach(c=>{
+    const o = document.createElement("option");
+    o.value=c.name; o.textContent=c.name;
+    sel.appendChild(o);
+  });
+}
+
+// ================= AUDITORIA DE FECHAMENTO =================
+function checkAudit() {
+  const [curY, curM] = currentMonth.split("-").map(Number);
+  let hasPending = false;
+  
+  Object.keys(appData.months).forEach(ym => {
+    const [y, m] = ym.split("-").map(Number);
+    if (y < curY || (y === curY && m < curM)) {
+      if (appData.months[ym].expenses.some(e => !e.paid)) {
+        hasPending = true;
+      }
+    }
+  });
+
+  document.getElementById("auditBanner").style.display = hasPending ? "flex" : "none";
+}
+
+// ================= LOCK SCREEN (PIN + BIOMETRIA) =================
+function unlockApp(){
+  document.getElementById("lockScreen").style.opacity = "0";
+  setTimeout(() => {
+    document.getElementById("lockScreen").style.display = "none";
+    document.getElementById("mainAppContent").style.display = "block";
+    render(); // processa os dados só agora, depois de desbloqueado
+    checkAudit();
+  }, 300);
+}
+
+// (substituída por showLockOrApp + setupBiometricUnlock, ver função boot() acima)
+
+
+window.enterPin = function(num) {
+  if (enteredPin.length < 4) {
+    enteredPin += num;
+    updatePinDots();
+  }
+  if (enteredPin.length === 4) {
+    if (enteredPin === appData.settings.pin) {
+      unlockApp();
+    } else {
+      const err = document.getElementById("pinError");
+      err.style.opacity = "1";
+      err.classList.add("shake");
+      setTimeout(() => err.classList.remove("shake"), 500);
+      setTimeout(clearPin, 800);
+    }
+  }
+}
+
+window.clearPin = function() {
+  enteredPin = "";
+  updatePinDots();
+  document.getElementById("pinError").style.opacity = "0";
+}
+
+function updatePinDots() {
+  const dots = document.querySelectorAll(".pin-dot");
+  dots.forEach((dot, idx) => {
+    if (idx < enteredPin.length) dot.classList.add("filled");
+    else dot.classList.remove("filled");
+  });
+}
+
+const pinSetupInput = document.getElementById("pinSetupInput");
+pinSetupInput.addEventListener("input", () => {
+  pinSetupInput.value = pinSetupInput.value.replace(/\D/g, "").slice(0, 4);
+});
+document.getElementById("btnSavePin").addEventListener("click", () => {
+  const input = document.getElementById("pinSetupInput");
+  const val = input.value.trim();
+  if (/^\d{4}$/.test(val)) {
+    appData.settings.pin = val;
+    saveData();
+    refreshBiometricSettingsRow();
+    showToast("Cadeado Pessoal ativado!");
+    document.getElementById("btnSavePin").textContent = "Alterado";
+    setTimeout(() => document.getElementById("btnSavePin").textContent = "Ativar", 2000);
+  } else if (val === "") {
+    appData.settings.pin = "";
+    saveData();
+    refreshBiometricSettingsRow();
+    showToast("Cadeado Pessoal desativado");
+  } else {
+    showToast("O PIN deve ter exatamente 4 números ou ficar vazio para remover");
+  }
+});
+
+// ================= BIOMETRIA (Face ID / Touch ID / desbloqueio do celular) =================
+// Usa a WebAuthn API com o autenticador da própria plataforma (platform authenticator).
+// Como o app não tem servidor, a credencial é validada localmente: o navegador só
+// libera a assinatura se a biometria/PIN do sistema operacional for confirmada.
+function b64urlToBuffer(b64url){
+  const pad = "=".repeat((4 - b64url.length % 4) % 4);
+  const b64 = (b64url + pad).replace(/-/g,"+").replace(/_/g,"/");
+  const raw = atob(b64);
+  const arr = new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) arr[i] = raw.charCodeAt(i);
+  return arr.buffer;
+}
+function bufferToB64url(buf){
+  const bytes = new Uint8Array(buf);
+  let str = "";
+  for(let i=0;i<bytes.length;i++) str += String.fromCharCode(bytes[i]);
+  return btoa(str).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function randomChallenge(){
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return arr;
+}
+
+async function biometricAvailable(){
+  if(!window.PublicKeyCredential || !navigator.credentials){
+    console.warn("WebAuthn indisponível: PublicKeyCredential ou navigator.credentials ausente.");
+    return false;
+  }
+  try{
+    const result = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    console.log("Autenticador de plataforma disponível?", result);
+    return result;
+  }catch(err){
+    console.error("Erro ao checar suporte a biometria:", err);
+    return false;
+  }
+}
+
+async function refreshBiometricSettingsRow(){
+  const row = document.getElementById("biometricRow");
+  const button = document.getElementById("btnSetupBiometric");
+  if(!/^\d{4}$/.test(String(appData.settings.pin || ""))){
+    row.style.display = "none";
+    return;
+  }
+  const supported = await biometricAvailable();
+  row.style.display = supported ? "flex" : "none";
+  if(supported) button.textContent = appData.settings.biometricCredId ? "Desativar" : "Ativar";
+}
+
+async function setupBiometric(){
+  try{
+    const userId = new Uint8Array(16);
+    crypto.getRandomValues(userId);
+    const appName = (appData.settings.title1||"Cofre") + (appData.settings.title2||"");
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: randomChallenge(),
+        rp: { id: location.hostname, name: appName },
+        user: { id: userId, name: appName, displayName: appName },
+        pubKeyCredParams: [{ type:"public-key", alg:-7 }, { type:"public-key", alg:-257 }],
+        authenticatorSelection: {
+          authenticatorAttachment: "platform",
+          userVerification: "required",
+          residentKey: "required",       // salva como passkey "descobrível" pelo Face ID
+          requireResidentKey: true        // mesmo efeito, para navegadores mais antigos
+        },
+        timeout: 60000,
+      }
+    });
+    appData.settings.biometricCredId = bufferToB64url(cred.rawId);
+    saveData();
+    showToast("Biometria ativada!");
+    document.getElementById("btnSetupBiometric").textContent = "Desativar";
+    return true;
+  }catch(err){
+    console.error("Erro WebAuthn (setup):", err);
+    showToast("Não foi possível ativar: " + (err && err.message ? err.message : "erro desconhecido"));
+    return false;
+  }
+}
+
+async function verifyBiometric(){
+  if(!appData.settings.biometricCredId) return false;
+  try{
+    await navigator.credentials.get({
+      publicKey: {
+        challenge: randomChallenge(),
+        rpId: location.hostname,
+        // Usa exatamente a credencial cadastrada por este app.
+        allowCredentials: [{
+          id: b64urlToBuffer(appData.settings.biometricCredId),
+          type: "public-key"
+        }],
+        userVerification: "required",
+        timeout: 60000,
+      }
+    });
+    return true; // o navegador só resolve a promise se a biometria/PIN do SO confirmar
+  }catch(err){
+    console.error("Erro WebAuthn (verify):", err);
+    return false; // usuário cancelou ou falhou a verificação
+  }
+}
+
+document.getElementById("btnSetupBiometric").addEventListener("click", async ()=>{
+  if(appData.settings.biometricCredId){
+    appData.settings.biometricCredId = "";
+    saveData();
+    showToast("Biometria desativada");
+    document.getElementById("btnSetupBiometric").textContent = "Ativar";
+  } else {
+    await setupBiometric();
+  }
+});
+
+document.getElementById("btnBiometricUnlock").addEventListener("click", async ()=>{
+  const ok = await verifyBiometric();
+  if(ok) unlockApp();
+});
+
+// ================= Configurações Modais =================
+const settingsOverlay = document.getElementById("settingsOverlay");
+document.getElementById("btnSettings").addEventListener("click", () => {
+  document.getElementById("pinSetupInput").value = appData.settings.pin || "";
+  settingsOverlay.classList.add("open");
+  refreshBiometricSettingsRow();
+});
+document.getElementById("closeSettingsModal").addEventListener("click", () => settingsOverlay.classList.remove("open"));
+settingsOverlay.addEventListener("click", e => { if(e.target===settingsOverlay) settingsOverlay.classList.remove("open"); });
+
+document.getElementById("btnThemeModal").addEventListener("click", toggleTheme);
+document.getElementById("colorPickerModal").addEventListener("input", e => {
+  syncColorSwatch("colorPickerModal");
+  applyAccent(e.target.value, false);
+});
+document.getElementById("colorPickerModal").addEventListener("change", e => applyAccent(e.target.value, true));
+
+const incomeOverlay = document.getElementById("incomeOverlay");
+document.getElementById("cardIncome").addEventListener("click", openIncomeModal);
+document.getElementById("closeIncomeModal").addEventListener("click", closeIncomeModal);
+incomeOverlay.addEventListener("click", e=>{ if(e.target===incomeOverlay) closeIncomeModal(); });
+
+function openIncomeModal(){ incomeOverlay.classList.add("open"); renderIncomeList(); }
+function closeIncomeModal(){ incomeOverlay.classList.remove("open"); render(); }
+function renderIncomeList(){
+  ensureMonth(currentMonth);
+  const list = document.getElementById("incomeList");
+  const incomes = appData.months[currentMonth].incomes;
+  if(incomes.length===0){
+    list.innerHTML = '<div class="empty-state"><div class="glyph">◌</div>Nenhuma entrada neste mês</div>';
+    return;
+  }
+  list.innerHTML = "";
+  incomes.forEach((inc,idx)=>{
+    const row = document.createElement("div");
+    row.className="list-row";
+    row.innerHTML = `
+      <div class="left"><span class="swatch" style="background:var(--success)"></span><span class="name">${escapeHtml(inc.name)}</span></div>
+      <div class="right"><span class="val">R$ ${fmt(inc.amount)}</span><button class="row-icon-btn del" data-del-income="${idx}">✕</button></div>
+    `;
+    list.appendChild(row);
+  });
+}
+document.getElementById("addIncomeBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("newIncomeName").value.trim();
+  const amount = roundMoney(document.getElementById("newIncomeAmount").value);
+  if(!name || !(amount>0)){ showToast("Preencha nome e valor"); return; }
+  ensureMonth(currentMonth);
+  appData.months[currentMonth].incomes.push({id:uid(), name, amount});
+  document.getElementById("newIncomeName").value="";
+  document.getElementById("newIncomeAmount").value="";
+  saveData(); renderIncomeList();
+});
+document.getElementById("incomeList").addEventListener("click", e=>{
+  const idx = e.target.getAttribute("data-del-income");
+  if(idx!==null){
+    appData.months[currentMonth].incomes.splice(Number(idx),1);
+    saveData(); renderIncomeList();
+  }
+});
+
+// ================= Metas (Goals) =================
+const goalOverlay = document.getElementById("goalOverlay");
+const goalFundOverlay = document.getElementById("goalFundOverlay");
+const celebrationOverlay = document.getElementById("celebrationOverlay");
+
+document.getElementById("btnOpenGoalModal").addEventListener("click", () => openGoalModal());
+document.getElementById("closeGoalModal").addEventListener("click", closeGoalModal);
+document.getElementById("closeGoalFundModal").addEventListener("click", closeFundModal);
+document.getElementById("btnCloseCelebration").addEventListener("click", () => celebrationOverlay.classList.remove("open"));
+
+goalOverlay.addEventListener("click", e => { if (e.target === goalOverlay) closeGoalModal(); });
+goalFundOverlay.addEventListener("click", e => { if (e.target === goalFundOverlay) closeFundModal(); });
+celebrationOverlay.addEventListener("click", e => { if (e.target === celebrationOverlay) celebrationOverlay.classList.remove("open"); });
+
+function openGoalModal(id = null) {
+  if (id && typeof id === 'string') {
+    const g = appData.goals.find(x => x.id === id);
+    if (!g) return;
+    document.getElementById("editGoalId").value = g.id;
+    document.getElementById("goalNameInput").value = g.name;
+    document.getElementById("goalTargetInput").value = g.target;
+    document.getElementById("goalFormTitle").textContent = "Editar Meta";
+  } else {
+    document.getElementById("goalForm").reset();
+    document.getElementById("editGoalId").value = "";
+    document.getElementById("goalFormTitle").textContent = "Nova Meta";
+  }
+  goalOverlay.classList.add("open");
+}
+function closeGoalModal() { goalOverlay.classList.remove("open"); }
+
+document.getElementById("goalForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const id = document.getElementById("editGoalId").value;
+  const name = document.getElementById("goalNameInput").value.trim();
+  const target = roundMoney(document.getElementById("goalTargetInput").value);
+
+  if (!name || !(target > 0)) { showToast("Preencha o nome e um objetivo válido"); return; }
+
+  if (id) {
+    const g = appData.goals.find(x => x.id === id);
+    if (g) {
+      const oldName = g.name;
+      g.name = name;
+      g.target = target;
+      g.completed = finiteNumber(g.current, 0) >= g.target;
+      if(oldName !== name){
+        Object.values(appData.months).forEach(month => {
+          if(!month || !Array.isArray(month.expenses)) return;
+          month.expenses.forEach(exp => {
+            if(exp.goalDeposit && exp.goalId === g.id && /^Depósito:/i.test(exp.desc)) exp.desc = `Depósito: ${name}`;
+          });
+        });
+      }
+    }
+  } else {
+    appData.goals.push({ id: uid(), name, target, current: 0, completed: false });
+  }
+  saveData(); render(); closeGoalModal(); showToast("Meta salva");
+});
+
+function openFundModal(id) {
+  const g = appData.goals.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById("fundGoalId").value = g.id;
+  document.getElementById("fundGoalName").textContent = g.name;
+  document.getElementById("goalFundForm").reset();
+  goalFundOverlay.classList.add("open");
+  setTimeout(() => document.getElementById("fundAmountInput").focus(), 50);
+}
+function closeFundModal() { goalFundOverlay.classList.remove("open"); }
+
+function adjustGoalBalanceForExpense(expense, delta){
+  if(!expense || !expense.goalDeposit || !expense.goalId) return;
+  const goal = appData.goals.find(g => g.id === expense.goalId);
+  if(!goal) return;
+  goal.current = Math.max(0, roundMoney(finiteNumber(goal.current, 0) + finiteNumber(delta, 0)));
+  goal.completed = goal.current >= finiteNumber(goal.target, 0);
+}
+
+document.getElementById("goalFundForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const id = document.getElementById("fundGoalId").value;
+  const amount = roundMoney(document.getElementById("fundAmountInput").value);
+
+  if (!(amount > 0)) { showToast("Digite um valor válido"); return; }
+  const g = appData.goals.find(x => x.id === id);
+  if (!g) { showToast("Meta não encontrada"); return; }
+
+  const wasCompleted = finiteNumber(g.current, 0) >= finiteNumber(g.target, 0);
+  g.current = roundMoney(finiteNumber(g.current, 0) + amount);
+  g.completed = g.current >= g.target;
+
+  ensureMonth(currentMonth);
+  let cat = appData.categories.find(c => c.name === "Metas");
+  if (!cat) {
+    cat = { name: "Metas", color: "#f59e0b", budget: 0 };
+    appData.categories.push(cat);
+    updateCategoryDropdown();
+  }
+  appData.months[currentMonth].expenses.push({
+    id: uid(),
+    date: dateForMonth(currentMonth),
+    desc: `Depósito: ${g.name}`,
+    amount,
+    category: "Metas",
+    group: "",
+    paid: true,
+    isFixed: false,
+    goalDeposit: true,
+    goalId: g.id
+  });
+
+  const completedNow = !wasCompleted && g.completed;
+  closeFundModal();
+  saveData();
+  render();
+
+  if (completedNow) {
+    document.getElementById("celebrationText").textContent = `Você completou sua meta: ${g.name}!`;
+    celebrationOverlay.classList.add("open");
+  } else {
+    showToast(`Adicionado R$ ${fmt(amount)} à meta`);
+  }
+});
+
+function deleteGoal(id) {
+  confirmDialog({
+    title: "Excluir meta",
+    message: "Deseja realmente excluir esta meta? Os lançamentos já registrados serão mantidos.",
+    onConfirm: ()=>{
+      Object.values(appData.months).forEach(month => {
+        if(!month || !Array.isArray(month.expenses)) return;
+        month.expenses.forEach(exp => {
+          if(exp.goalId === id){
+            delete exp.goalId;
+            delete exp.goalDeposit;
+          }
+        });
+      });
+      appData.goals = appData.goals.filter(x => x.id !== id);
+      saveData(); render(); showToast("Meta excluída");
+    }
+  });
+}
+
+document.getElementById("goalsList").addEventListener("click", e => {
+  let t = e.target;
+  while(t && t !== e.currentTarget) {
+    if(t.hasAttribute("data-fund-goal")) { openFundModal(t.getAttribute("data-fund-goal")); return; }
+    if(t.hasAttribute("data-edit-goal")) { openGoalModal(t.getAttribute("data-edit-goal")); return; }
+    if(t.hasAttribute("data-del-goal")) { deleteGoal(t.getAttribute("data-del-goal")); return; }
+    t = t.parentElement;
+  }
+});
+
+// ================= FIM Metas =================
+
+const categoryOverlay = document.getElementById("categoryOverlay");
+document.getElementById("btnOpenCategories").addEventListener("click", ()=>{ categoryOverlay.classList.add("open"); renderCategoryList(); });
+document.getElementById("closeCategoryModal").addEventListener("click", closeCategoryModal);
+categoryOverlay.addEventListener("click", e=>{ if(e.target===categoryOverlay) closeCategoryModal(); });
+function closeCategoryModal(){
+  categoryOverlay.classList.remove("open");
+  cancelCatEdit(); updateCategoryDropdown(); render();
+}
+function renderCategoryList(){
+  const list = document.getElementById("categoryList");
+  list.innerHTML = "";
+  appData.categories.forEach((cat,idx)=>{
+    const row = document.createElement("div");
+    row.className="list-row";
+    row.innerHTML = `
+      <div class="left">
+        <span class="swatch" style="background:${cat.color}"></span>
+        <div><span class="name">${escapeHtml(cat.name)}</span><span class="sub" style="display:block;">Teto: R$ ${fmt(cat.budget||0)}</span></div>
+      </div>
+      <div class="right">
+        <button class="row-icon-btn" data-edit-cat="${idx}">✎</button>
+        <button class="row-icon-btn del" data-del-cat="${idx}">✕</button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+document.getElementById("categoryList").addEventListener("click", e=>{
+  let t = e.target;
+  while(t && t !== e.currentTarget && !t.hasAttribute("data-edit-cat") && !t.hasAttribute("data-del-cat")) t = t.parentElement;
+  if(!t || t === e.currentTarget) return;
+
+  const editIdx = t.getAttribute("data-edit-cat");
+  const delIdx = t.getAttribute("data-del-cat");
+  if(editIdx !== null) { startCatEdit(Number(editIdx)); return; }
+  if(delIdx === null) return;
+
+  const idx = Number(delIdx);
+  const cat = appData.categories[idx];
+  if(!cat) return;
+  if(appData.categories.length <= 1){
+    showToast("É necessário manter pelo menos uma categoria");
+    return;
+  }
+
+  const replacement = appData.categories.find((c,i)=> i !== idx && c.name === "Outros")
+    || appData.categories.find((c,i)=> i !== idx);
+  let usageCount = 0;
+  Object.values(appData.months).forEach(m => {
+    if(!m || !Array.isArray(m.expenses)) return;
+    m.expenses.forEach(exp => { if(exp.category === cat.name) usageCount++; });
+  });
+
+  confirmDialog({
+    title: "Excluir categoria",
+    message: usageCount > 0
+      ? `A categoria está em ${usageCount} lançamento(s). Eles serão movidos para “${replacement.name}”. Continuar?`
+      : `Excluir a categoria “${cat.name}”?`,
+    onConfirm: ()=>{
+      Object.values(appData.months).forEach(m => {
+        if(!m || !Array.isArray(m.expenses)) return;
+        m.expenses.forEach(exp => { if(exp.category === cat.name) exp.category = replacement.name; });
+      });
+      appData.fixedExpenses.forEach(f => { if(f.category === cat.name) f.category = replacement.name; });
+      appData.categories.splice(idx, 1);
+      if(activeFilter.type === "category" && activeFilter.value === cat.name){
+        activeFilter = {type:"all", value:""};
+        document.getElementById("filterChip").classList.remove("show");
+      }
+      cancelCatEdit();
+      saveData();
+      renderCategoryList();
+      updateCategoryDropdown();
+      render();
+    }
+  });
+});
+function startCatEdit(idx){
+  const cat = appData.categories[idx];
+  document.getElementById("newCatName").value = cat.name;
+  document.getElementById("newCatBudget").value = cat.budget || "";
+  document.getElementById("newCatColor").value = cat.color;
+  syncColorSwatch("newCatColor");
+  editingCategoryIdx = idx;
+  document.getElementById("saveCatBtn").textContent = "Salvar Alteração";
+  document.getElementById("cancelCatEditBtn").style.display = "inline-block";
+}
+function cancelCatEdit(){
+  document.getElementById("newCatName").value="";
+  document.getElementById("newCatBudget").value="";
+  document.getElementById("newCatColor").value = "#10b981";
+  syncColorSwatch("newCatColor");
+  editingCategoryIdx = null;
+  document.getElementById("saveCatBtn").textContent="Salvar Categoria";
+  document.getElementById("cancelCatEditBtn").style.display="none";
+}
+document.getElementById("cancelCatEditBtn").addEventListener("click", cancelCatEdit);
+["input","change"].forEach(evt => document.getElementById("newCatColor").addEventListener(evt, ()=> syncColorSwatch("newCatColor")));
+document.getElementById("saveCatBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("newCatName").value.trim();
+  const color = normalizeHexColor(document.getElementById("newCatColor").value, "#10b981");
+  const budget = Math.max(0, roundMoney(document.getElementById("newCatBudget").value));
+  if(!name){ showToast("Digite um nome"); return; }
+
+  const duplicateIdx = appData.categories.findIndex(c => c.name.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"));
+  if(duplicateIdx !== -1 && duplicateIdx !== editingCategoryIdx){
+    showToast("Categoria já existe");
+    return;
+  }
+
+  if(editingCategoryIdx!==null){
+    const oldName = appData.categories[editingCategoryIdx].name;
+    appData.categories[editingCategoryIdx] = {name,color,budget};
+    if(oldName!==name){
+      Object.values(appData.months).forEach(m=> {
+        if(Array.isArray(m.expenses)) m.expenses.forEach(e=>{ if(e.category===oldName) e.category=name; });
+      });
+      appData.fixedExpenses.forEach(f=>{ if(f.category===oldName) f.category=name; });
+      if(activeFilter.type === "category" && activeFilter.value === oldName){
+        activeFilter.value = name;
+        document.getElementById("filterChipLabel").textContent = name;
+      }
+    }
+    cancelCatEdit();
+  } else {
+    appData.categories.push({name,color,budget});
+    cancelCatEdit();
+  }
+  saveData(); renderCategoryList(); updateCategoryDropdown(); render();
+});
+
+document.getElementById("isFixedInput").addEventListener("change", e=>{ document.getElementById("fixedPillLabel").classList.toggle("checked", e.target.checked); });
+document.getElementById("paidInput").addEventListener("change", e=>{ document.getElementById("paidPillLabel").classList.toggle("checked", e.target.checked); });
+
+document.getElementById("txForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const editId = document.getElementById("editId").value;
+  const desc = document.getElementById("descInput").value.trim();
+  const amount = roundMoney(document.getElementById("amountInput").value);
+  const category = document.getElementById("categoryInput").value;
+  const group = document.getElementById("groupInput").value.trim();
+  const isFixed = document.getElementById("isFixedInput").checked;
+  const paid = document.getElementById("paidInput").checked;
+
+  if(!desc || !(amount>0)){ showToast("Preencha descrição e valor"); return; }
+  if(!category){ showToast("Selecione uma categoria"); return; }
+  ensureMonth(currentMonth);
+
+  if(editId){
+    const exp = appData.months[currentMonth].expenses.find(x=>x.id===editId);
+    if(!exp){ showToast("Lançamento não encontrado"); return; }
+    const previousAmount = finiteNumber(exp.amount, 0);
+    Object.assign(exp, {desc, amount, category, group, isFixed, paid});
+    if(exp.goalDeposit){
+      exp.isFixed = false;
+      adjustGoalBalanceForExpense(exp, amount - previousAmount);
+    }
+    cancelEdit();
+    closeTxModal();
+    showToast("Lançamento atualizado");
+  } else {
+    let inst = parseInt(document.getElementById("installmentsInput").value, 10) || 1;
+    inst = Math.max(1, Math.min(inst, 120));
+    const totalCents = Math.round(amount * 100);
+    if(inst > totalCents){
+      showToast("O número de parcelas é maior que a quantidade de centavos do valor");
+      return;
+    }
+    const baseCents = Math.floor(totalCents / inst);
+    const remainderCents = totalCents - (baseCents * inst);
+    const baseId = uid();
+    const newBatchId = uid();
+    for(let i=0;i<inst;i++){
+      const targetMonth = addMonthsStr(currentMonth, i);
+      ensureMonth(targetMonth);
+      const finalDesc = inst>1 ? `${desc} (${i+1}/${inst})` : desc;
+      const installmentCents = baseCents + (i === inst - 1 ? remainderCents : 0);
+      appData.months[targetMonth].expenses.push({
+        id: `${baseId}-${i}`,
+        batchId: inst > 1 ? newBatchId : null,
+        date: dateForMonth(targetMonth),
+        desc: finalDesc,
+        amount: installmentCents / 100,
+        category, group, paid: i===0 ? paid : false, isFixed
+      });
+    }
+    if(isFixed && !appData.fixedExpenses.find(f=>f.desc.toLowerCase()===desc.toLowerCase())){
+      appData.fixedExpenses.push({desc, amount, category});
+    }
+    document.getElementById("txForm").reset();
+    document.getElementById("paidInput").checked = true;
+    document.getElementById("paidPillLabel").classList.add("checked");
+    document.getElementById("fixedPillLabel").classList.remove("checked");
+    document.getElementById("installmentsInput").value = 1;
+    closeTxModal();
+    showToast(inst>1 ? `Parcelado em ${inst}x` : "Lançamento salvo");
+  }
+  saveData(); render();
+});
+
+function editExpense(id){
+  const exp = appData.months[currentMonth].expenses.find(x=>x.id===id);
+  if(!exp) return;
+  document.getElementById("editId").value = exp.id;
+  document.getElementById("editBatchId").value = exp.batchId || "";
+  document.getElementById("descInput").value = exp.desc;
+  document.getElementById("amountInput").value = exp.amount;
+  document.getElementById("categoryInput").value = exp.category;
+  document.getElementById("groupInput").value = exp.group || "";
+  document.getElementById("isFixedInput").checked = exp.isFixed || false;
+  document.getElementById("fixedPillLabel").classList.toggle("checked", !!exp.isFixed);
+  document.getElementById("paidInput").checked = exp.paid;
+  document.getElementById("paidPillLabel").classList.toggle("checked", exp.paid);
+  document.getElementById("formTitle").textContent = "Editando lançamento";
+  document.getElementById("btnCancelEdit").style.display = "inline-block";
+  openTxModal();
+}
+function cancelEdit(){
+  document.getElementById("txForm").reset();
+  document.getElementById("editId").value = "";
+  document.getElementById("editBatchId").value = "";
+  document.getElementById("paidInput").checked = true;
+  document.getElementById("paidPillLabel").classList.add("checked");
+  document.getElementById("fixedPillLabel").classList.remove("checked");
+  document.getElementById("formTitle").textContent = "Novo lançamento";
+  document.getElementById("btnCancelEdit").style.display = "none";
+}
+document.getElementById("btnCancelEdit").addEventListener("click", ()=>{ cancelEdit(); closeTxModal(); });
+
+const txOverlay = document.getElementById("txOverlay");
+function openTxModal(){
+  txOverlay.classList.add("open");
+  setTimeout(()=> document.getElementById("descInput").focus(), 50);
+}
+function closeTxModal(){
+  txOverlay.classList.remove("open");
+  cancelEdit();
+}
+document.getElementById("btnOpenTxModal").addEventListener("click", openTxModal);
+document.getElementById("closeTxModal").addEventListener("click", closeTxModal);
+txOverlay.addEventListener("click", e=>{ if(e.target===txOverlay) closeTxModal(); });
+
+function deleteExpense(id){
+  const exp = appData.months[currentMonth].expenses.find(x=>x.id===id);
+  if(!exp) return;
+
+  if (exp.batchId) {
+    confirmDialog({
+      title: "Excluir parcelamento",
+      message: "Este lançamento faz parte de um parcelamento. Deseja excluir esta e todas as parcelas futuras também?",
+      extraLabel: "Excluir só esta parcela",
+      onExtra: ()=>{
+        lastDeleted = JSON.parse(JSON.stringify(exp));
+        lastDeletedMonth = currentMonth;
+        adjustGoalBalanceForExpense(exp, -finiteNumber(exp.amount, 0));
+        appData.months[currentMonth].expenses = appData.months[currentMonth].expenses.filter(x=>x.id!==id);
+        saveData(); render();
+        showToast("Excluído", true);
+      },
+      onConfirm: ()=>{
+        const [curY, curM] = currentMonth.split("-").map(Number);
+        Object.keys(appData.months).forEach(ym => {
+            const [y, m] = ym.split("-").map(Number);
+            if (y > curY || (y === curY && m >= curM)) {
+                const removed = appData.months[ym].expenses.filter(x => x.batchId === exp.batchId);
+                removed.forEach(item => adjustGoalBalanceForExpense(item, -finiteNumber(item.amount, 0)));
+                appData.months[ym].expenses = appData.months[ym].expenses.filter(x => x.batchId !== exp.batchId);
+            }
+        });
+        saveData(); render(); showToast("Parcelas excluídas");
+      }
+    });
+    return;
+  }
+
+  // Exclusão Normal
+  lastDeleted = JSON.parse(JSON.stringify(exp));
+  lastDeletedMonth = currentMonth;
+  adjustGoalBalanceForExpense(exp, -finiteNumber(exp.amount, 0));
+  appData.months[currentMonth].expenses = appData.months[currentMonth].expenses.filter(x=>x.id!==id);
+  saveData(); render();
+  showToast("Excluído", true);
+}
+function togglePaid(id){
+  const exp = appData.months[currentMonth].expenses.find(x=>x.id===id);
+  if(exp){ exp.paid = !exp.paid; saveData(); render(); }
+}
+
+function setFilter(type,value){
+  activeFilter = {type,value};
+  document.getElementById("filterChip").classList.add("show");
+  document.getElementById("filterChipLabel").textContent = value;
+  render();
+}
+function clearFilter(){
+  activeFilter = {type:"all", value:""};
+  document.getElementById("filterChip").classList.remove("show");
+  render();
+}
+document.getElementById("filterChipClose").addEventListener("click", clearFilter);
+document.getElementById("searchInput").addEventListener("input", render);
+
+function dragStart(ev,id){
+  draggedId=id;
+  ev.dataTransfer.effectAllowed="move";
+  ev.dataTransfer.setData("text/plain", id);
+  setTimeout(()=> ev.target.classList.add("dragging"), 0);
+  document.getElementById("unassignZone").classList.add("show");
+}
+function dragEnd(ev){
+  ev.target.classList.remove("dragging");
+  document.getElementById("unassignZone").classList.remove("show");
+  draggedId=null;
+}
+function allowDrop(ev){ ev.preventDefault(); ev.currentTarget.classList.add("active","drop-active"); }
+function dragLeave(ev){ ev.currentTarget.classList.remove("active","drop-active"); }
+function dropAssign(ev, groupName){
+  ev.preventDefault(); ev.currentTarget.classList.remove("active","drop-active");
+  if(draggedId){
+    const exp = appData.months[currentMonth].expenses.find(x=>x.id===draggedId);
+    if(exp && exp.group!==groupName){ exp.group=groupName; saveData(); render(); }
+  }
+}
+function dropUnassign(ev){
+  ev.preventDefault(); ev.currentTarget.classList.remove("active","drop-active");
+  if(draggedId){
+    const exp = appData.months[currentMonth].expenses.find(x=>x.id===draggedId);
+    if(exp && exp.group){ exp.group=""; saveData(); render(); }
+  }
+}
+function removeGroupDirectly(id){
+  const exp = appData.months[currentMonth].expenses.find(x=>x.id===id);
+  if(exp){ exp.group=""; saveData(); render(); }
+}
+
+function escapeHtml(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+function renderGoals() {
+  const list = document.getElementById("goalsList");
+  list.innerHTML = "";
+  if (appData.goals.length === 0) {
+    list.innerHTML = `<div class="empty-state" style="padding:16px;">Nenhuma meta definida.</div>`;
+    return;
+  }
+  
+  appData.goals.forEach(goal => {
+    const pct = Math.min((goal.current / goal.target) * 100, 100);
+    const isCompleted = goal.current >= goal.target;
+    
+    const card = document.createElement("div");
+    card.className = `goal-card ${isCompleted ? 'completed' : ''}`;
+    card.innerHTML = `
+      <div class="goal-top">
+        <span class="goal-name">${isCompleted ? '🏆 ' : ''}${escapeHtml(goal.name)}</span>
+        <span class="goal-nums">R$ ${fmt(goal.current)} / R$ ${fmt(goal.target)}</span>
+      </div>
+      <div class="goal-track"><div class="goal-fill" style="width:${pct}%"></div></div>
+      <div class="goal-actions">
+        ${!isCompleted ? `<button class="goal-btn add" data-fund-goal="${goal.id}">+ Guardar</button>` : ''}
+        <button class="goal-btn" data-edit-goal="${goal.id}">✎</button>
+        <button class="goal-btn del" data-del-goal="${goal.id}">✕</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function render(){
+  ensureMonth(currentMonth);
+  const monthData = appData.months[currentMonth];
+  const search = document.getElementById("searchInput").value.toLowerCase();
+
+  const totalIncome = monthData.incomes.reduce((a,c)=>a+c.amount,0);
+  document.getElementById("heroIncome").textContent = "R$ " + fmt(totalIncome);
+  document.getElementById("heroIncomeCount").textContent = monthData.incomes.length;
+
+  let totalExp=0, totalPaid=0, totalPend=0, paidC=0, pendC=0;
+  const catTotals={}, groupTotals={}, uniqueGroups=new Set();
+
+  monthData.expenses.forEach(e=>{
+    totalExp += e.amount;
+    if(e.paid){ totalPaid+=e.amount; paidC++; } else { totalPend+=e.amount; pendC++; }
+    catTotals[e.category] = (catTotals[e.category]||0) + e.amount;
+    if(e.group){ uniqueGroups.add(e.group); groupTotals[e.group] = (groupTotals[e.group]||0) + e.amount; }
+  });
+
+  document.getElementById("heroPaid").textContent = "R$ " + fmt(totalPaid);
+  document.getElementById("heroPaidCount").textContent = paidC;
+  document.getElementById("heroPending").textContent = "R$ " + fmt(totalPend);
+  document.getElementById("heroPendingCount").textContent = pendC;
+
+  const balance = totalIncome - totalExp;
+  const balEl = document.getElementById("heroBalance");
+  balEl.textContent = "R$ " + fmt(balance);
+  balEl.classList.toggle("negative", balance<0);
+  
+  const usagePct = totalIncome>0 ? Math.min(100, (totalExp/totalIncome)*100) : (totalExp>0?100:0);
+  document.getElementById("usageFill").style.width = usagePct + "%";
+  document.getElementById("usageFill").style.background = usagePct>=100 ? "var(--coral)" : "var(--success)";
+
+  let filtered = monthData.expenses.filter(e=>{
+    if(!e.desc.toLowerCase().includes(search) && !(e.group||"").toLowerCase().includes(search) && !e.category.toLowerCase().includes(search)) return false;
+    if(activeFilter.type==="group") return e.group===activeFilter.value;
+    if(activeFilter.type==="category") return e.category===activeFilter.value;
+    return true;
+  });
+
+  const tbody = document.getElementById("txTableBody");
+  document.getElementById("txCountBadge").textContent = monthData.expenses.length;
+  if(filtered.length===0){
+    tbody.innerHTML = `<tr class="tx-empty-row"><td colspan="6"><div class="empty-state"><div class="glyph">◌</div>Nenhum lançamento encontrado</div></td></tr>`;
+  } else {
+    tbody.innerHTML = "";
+    filtered.sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach((exp,idx)=>{
+      const cd = getCatData(exp.category);
+      const groupBadge = exp.group ? `<span class="tx-group-tag" data-set-group="${escapeHtml(exp.group)}">${escapeHtml(exp.group)}<button data-unset-group="${exp.id}">✕</button></span>` : "";
+      const fixedTag = exp.isFixed ? `<span class="tag-recur" title="Recorrente">↻</span>` : "";
+      const statusIcon = exp.paid ? "✓" : "⏳";
+      const statusColor = exp.paid ? "var(--success)" : "var(--ouro)";
+      
+      const tr = document.createElement("tr");
+      // Em telas de toque, o draggable nativo do HTML5 não funciona como
+      // arrastar de verdade — no Safari/iOS ele dispara um "preview" de
+      // arraste malformado (bloco colorido cobrindo a linha inteira).
+      // Só habilita o arraste em dispositivos com mouse de verdade.
+      tr.draggable = canNativeDrag;
+      tr.style.animationDelay = Math.min(idx*0.02, 0.2) + "s";
+      tr.innerHTML = `
+        <td><span class="tx-bar" style="background:${cd.color}"></span></td>
+        <td style="text-align:center;"><button class="status-btn" style="color:${statusColor}; font-size:18px;" data-toggle-paid="${exp.id}">${statusIcon}</button></td>
+        <td>
+          <div class="tx-desc-wrap">
+            <div class="tx-desc">${escapeHtml(exp.desc)}${fixedTag}</div>
+            ${groupBadge}
+          </div>
+        </td>
+        <td><span class="cat-chip" style="background:${cd.color}22; color:${cd.color}; border:1px solid ${cd.color}55;" data-set-cat="${escapeHtml(exp.category)}">${escapeHtml(exp.category)}</span></td>
+        <td class="amount-cell ${exp.paid?'':'pending'}">R$ ${fmt(exp.amount)}</td>
+        <td>
+          <div class="row-actions">
+            <button data-edit-tx="${exp.id}" title="Editar">✎</button>
+            <button class="del" data-del-tx="${exp.id}" title="Excluir">✕</button>
+          </div>
+        </td>
+      `;
+      tr.addEventListener("dragstart", ev=> dragStart(ev, exp.id));
+      tr.addEventListener("dragend", dragEnd);
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderGoals();
+  checkAudit();
+
+  const groupsEl = document.getElementById("groupsList");
+  if(uniqueGroups.size===0){
+    groupsEl.innerHTML = `<div class="empty-state" style="padding:16px;">Arraste um lançamento aqui para agrupar.</div>`;
+  } else {
+    groupsEl.innerHTML = "";
+    Array.from(uniqueGroups).forEach(g=>{
+      const div = document.createElement("div");
+      div.className="group-pill";
+      div.innerHTML = `<span>📁 ${escapeHtml(g)}</span><span class="amt">R$ ${fmt(groupTotals[g])}</span>`;
+      div.addEventListener("click", ()=> setFilter("group", g));
+      div.addEventListener("dragover", allowDrop);
+      div.addEventListener("dragleave", dragLeave);
+      div.addEventListener("drop", ev=> dropAssign(ev, g));
+      groupsEl.appendChild(div);
+    });
+  }
+
+  const budgetsEl = document.getElementById("budgetsList");
+  budgetsEl.innerHTML = "";
+  let hasBudget=false;
+  appData.categories.forEach(c=>{
+    if(c.budget>0){
+      hasBudget=true;
+      const spent = catTotals[c.name] || 0;
+      const pct = Math.min((spent/c.budget)*100, 100);
+      const over = spent>c.budget;
+      const row = document.createElement("div");
+      row.className="budget-row";
+      row.innerHTML = `
+        <div class="budget-top">
+          <span class="budget-name">${escapeHtml(c.name)}</span>
+          <span class="budget-nums ${over?'over':''}">R$${fmt(spent)} / R$${fmt(c.budget)}</span>
+        </div>
+        <div class="budget-track"><div class="budget-fill" style="width:${pct}%; background:${over?'var(--coral)':c.color}"></div></div>
+      `;
+      row.addEventListener("click", ()=> setFilter("category", c.name));
+      budgetsEl.appendChild(row);
+    }
+  });
+  if(!hasBudget) budgetsEl.innerHTML = `<div class="empty-state" style="padding:16px;">Defina tetos nas categorias.</div>`;
+
+  updateChart(monthData.expenses, catTotals, groupTotals);
+
+  const dl = document.getElementById("groupList");
+  dl.innerHTML = "";
+  uniqueGroups.forEach(g=>{ const o=document.createElement("option"); o.value=g; dl.appendChild(o); });
+}
+
+document.getElementById("txTableBody").addEventListener("click", e=>{
+  let t = e.target;
+  while(t && t.tagName !== 'TR') {
+      if(t.hasAttribute("data-edit-tx")) { editExpense(t.getAttribute("data-edit-tx")); return; }
+      if(t.hasAttribute("data-del-tx")) { deleteExpense(t.getAttribute("data-del-tx")); return; }
+      if(t.hasAttribute("data-toggle-paid")) { togglePaid(t.getAttribute("data-toggle-paid")); return; }
+      if(t.hasAttribute("data-set-cat")) { setFilter("category", t.getAttribute("data-set-cat")); return; }
+      if(t.hasAttribute("data-set-group")) { setFilter("group", t.getAttribute("data-set-group")); return; }
+      if(t.hasAttribute("data-unset-group")) { removeGroupDirectly(t.getAttribute("data-unset-group")); return; }
+      t = t.parentElement;
+  }
+});
+
+document.getElementById("unassignZone").addEventListener("dragover", allowDrop);
+document.getElementById("unassignZone").addEventListener("dragleave", dragLeave);
+document.getElementById("unassignZone").addEventListener("drop", dropUnassign);
+
+function updateChart(expenses, catTotals, groupTotals){
+  // Como o Chart.js carrega com defer (não bloqueia a abertura do app),
+  // pode ainda não estar pronto na primeira renderização. Se não estiver,
+  // não quebra — só tenta de novo assim que o script terminar de carregar.
+  if(typeof Chart === "undefined"){
+    window.addEventListener("load", ()=> updateChart(expenses, catTotals, groupTotals), { once:true });
+    return;
+  }
+  const ctx = document.getElementById("donutChart").getContext("2d");
+  let labels=[], data=[], colors=[];
+  if(chartMode==="category"){
+    labels = Object.keys(catTotals); data = Object.values(catTotals);
+    colors = labels.map(l=> getCatData(l).color);
+  } else if(chartMode==="group"){
+    labels = Object.keys(groupTotals); data = Object.values(groupTotals);
+    colors = labels.map((_,i)=> PALETTE[i % PALETTE.length]);
+  } else {
+    const top = [...expenses].sort((a,b)=>b.amount-a.amount).slice(0,6);
+    labels = top.map(x=> x.desc.substring(0,14));
+    data = top.map(x=> x.amount);
+    colors = top.map(x=> getCatData(x.category).color);
+  }
+  const isDark = !document.documentElement.classList.contains("light");
+  if(donutChart) donutChart.destroy();
+  if(data.length===0){
+    donutChart = new Chart(ctx, {
+      type:"doughnut",
+      data:{labels:["Sem dados"], datasets:[{data:[1], backgroundColor:[isDark?"#27272a":"#f1f5f9"]}]},
+      options:{cutout:"75%", plugins:{legend:{display:false}, tooltip:{enabled:false}}, animation:false}
+    });
+    return;
+  }
+  donutChart = new Chart(ctx, {
+    type:"doughnut",
+    data:{labels, datasets:[{data, backgroundColor:colors, borderWidth:0, borderColor: isDark?"#18181b":"#ffffff"}]},
+    options:{
+      responsive:true, cutout:"75%",
+      plugins:{ 
+        legend:{ position:"bottom", labels:{ color: isDark?"#a1a1aa":"#475569", font:{family:"Inter", size:11, weight:"600"}, usePointStyle:true, boxWidth:10, padding:16 } },
+        tooltip: {
+            backgroundColor: isDark ? '#27272a' : '#ffffff',
+            titleColor: isDark ? '#fafafa' : '#0f172a',
+            bodyColor: isDark ? '#a1a1aa' : '#475569',
+            borderColor: isDark ? '#3f3f46' : '#e2e8f0',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 12
+        }
+      }
+    }
+  });
+}
+document.querySelectorAll(".chart-tabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".chart-tabs button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    chartMode = btn.getAttribute("data-mode");
+    appData.settings.chartMode = chartMode;
+    saveData(); render();
+  });
+});
+
+const yearlyOverlay = document.getElementById("yearlyOverlay");
+document.getElementById("btnYearly").addEventListener("click", openYearly);
+document.getElementById("closeYearlyModal").addEventListener("click", ()=> yearlyOverlay.classList.remove("open"));
+yearlyOverlay.addEventListener("click", e=>{ if(e.target===yearlyOverlay) yearlyOverlay.classList.remove("open"); });
+
+function openYearly(){
+  yearlyOverlay.classList.add("open");
+  const sel = document.getElementById("yearSelector");
+  sel.innerHTML = "";
+  const years = new Set(Object.keys(appData.months).map(k=>k.split("-")[0]));
+  years.add(String(new Date().getFullYear()));
+  Array.from(years).sort((a,b)=>b-a).forEach(y=>{
+    const o = document.createElement("option"); o.value=y; o.textContent=y; sel.appendChild(o);
+  });
+  generateYearlyReport();
+}
+document.getElementById("yearSelector").addEventListener("change", generateYearlyReport);
+
+function generateYearlyReport(){
+  if(typeof Chart === "undefined"){
+    window.addEventListener("load", generateYearlyReport, { once:true });
+    return;
+  }
+  const year = document.getElementById("yearSelector").value;
+  let yInc=0, yExp=0;
+  const dInc = new Array(12).fill(0), dExp = new Array(12).fill(0);
+  Object.keys(appData.months).forEach(ym=>{
+    const [y,m] = ym.split("-");
+    if(y===year){
+      const idx = parseInt(m)-1;
+      const md = appData.months[ym];
+      const mi = md.incomes.reduce((a,c)=>a+c.amount,0);
+      const me = md.expenses.reduce((a,c)=>a+c.amount,0);
+      dInc[idx]=mi; dExp[idx]=me; yInc+=mi; yExp+=me;
+    }
+  });
+  document.getElementById("biIncome").textContent = "R$ " + fmt(yInc);
+  document.getElementById("biExpense").textContent = "R$ " + fmt(yExp);
+  document.getElementById("biRetained").textContent = "R$ " + fmt(yInc-yExp);
+
+  const isDark = !document.documentElement.classList.contains("light");
+  const ctx = document.getElementById("yearlyChart").getContext("2d");
+  if(yearlyChart) yearlyChart.destroy();
+  yearlyChart = new Chart(ctx, {
+    type:"bar",
+    data:{ labels: MONTHS_SHORT, datasets:[
+      {label:"Renda", data:dInc, backgroundColor:"#10b981", borderRadius:6, maxBarThickness:24},
+      {label:"Gasto", data:dExp, backgroundColor:"#ef4444", borderRadius:6, maxBarThickness:24}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        y:{ beginAtZero:true, grid:{color: isDark?"#27272a":"#e2e8f0", drawBorder:false}, ticks:{font:{family:"IBM Plex Mono", size:11}, color: isDark?"#a1a1aa":"#64748b"} },
+        x:{ grid:{display:false}, ticks:{font:{family:"Inter", weight:"600", size:12}, color: isDark?"#a1a1aa":"#64748b"} }
+      },
+      plugins:{ 
+          legend:{ labels:{ color: isDark?"#fafafa":"#0f172a", font:{family:"Inter", weight:"600"}, usePointStyle:true, boxWidth:8 } },
+          tooltip: {
+            backgroundColor: isDark ? '#27272a' : '#ffffff',
+            titleColor: isDark ? '#fafafa' : '#0f172a',
+            bodyColor: isDark ? '#a1a1aa' : '#475569',
+            borderColor: isDark ? '#3f3f46' : '#e2e8f0',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 12
+        }
+      }
+    }
+  });
+}
+
+document.getElementById("btnExportModal").addEventListener("click", async ()=>{
+  const filename = "cofre-backup-" + localDateISO() + ".json";
+  const jsonStr = JSON.stringify(appData, null, 2);
+  try{
+    // Em celular, a Web Share API é o caminho mais confiável para "salvar" um arquivo
+    if(navigator.share && navigator.canShare){
+      const file = new File([jsonStr], filename, {type:"application/json"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:"Backup Cofre"});
+        settingsOverlay.classList.remove("open");
+        showToast("Backup compartilhado");
+        return;
+      }
+    }
+  }catch(err){
+    // Se o usuário cancelar o compartilhamento, não trata como erro
+    if(err && err.name === "AbortError") return;
+  }
+  // Fallback (desktop ou navegadores sem Web Share): download tradicional
+  try{
+    const blob = new Blob([jsonStr], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    settingsOverlay.classList.remove("open");
+    showToast("Backup exportado");
+  }catch(err){
+    // Último recurso: abre o JSON numa aba nova para o usuário salvar manualmente
+    const w = window.open();
+    if(w){ w.document.write("<pre>"+jsonStr.replace(/</g,"&lt;")+"</pre>"); }
+    else { showToast("Não foi possível exportar. Tente pelo navegador padrão."); }
+  }
+});
+
+const fileInput = document.getElementById("fileInput");
+document.getElementById("btnImportModal").addEventListener("click", ()=> fileInput.click());
+fileInput.addEventListener("change", e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt=>{
+    try{
+      const imported = JSON.parse(evt.target.result);
+      if(!imported || typeof imported !== "object" || Array.isArray(imported)
+        || !Array.isArray(imported.categories)
+        || !imported.months || typeof imported.months !== "object" || Array.isArray(imported.months)){
+        throw new Error("formato inválido");
+      }
+      confirmDialog({
+        title: "Importar backup",
+        message: "Importar este arquivo vai substituir todos os dados atuais. Continuar?",
+        onConfirm: ()=>{
+          appData = normalizeAppData(imported);
+          saveData();
+          document.getElementById("titlePart1").textContent = appData.settings.title1 || "Cofre";
+          document.getElementById("titlePart2").textContent = appData.settings.title2 ?? ".";
+          applyAccent(appData.settings.accent || "#10b981", false);
+          document.getElementById("colorPickerModal").value = appData.settings.accent || "#10b981";
+          syncColorSwatch("colorPickerModal");
+          applyTheme(appData.settings.theme || "dark");
+          chartMode = appData.settings.chartMode || "category";
+          updateCategoryDropdown();
+          render();
+          settingsOverlay.classList.remove("open");
+          showToast("Backup importado");
+        }
+      });
+    }catch(err){
+      showToast("Não foi possível ler esse arquivo. Verifique se é um backup válido do Cofre.");
+    }
+    fileInput.value = "";
+  };
+  reader.readAsText(file);
+});
+
+let pickerYear = 0;
+const monthBtn = document.getElementById("monthBtn");
+const monthDropdown = document.getElementById("monthDropdown");
+const monthGrid = document.getElementById("monthGrid");
+const yearLabel = document.getElementById("yearLabel");
+
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function fmtMonthLabel(key){
+  const [y,m] = key.split("-").map(Number);
+  return capitalize(MONTH_NAMES_FULL[m-1]) + " de " + y;
+}
+
+function updateMonthBtnLabel(){ monthBtn.innerHTML = fmtMonthLabel(currentMonth) + ' <span class="chev">▾</span>'; }
+
+function renderMonthGrid(){
+  yearLabel.textContent = pickerYear;
+  const [curY, curM] = currentMonth.split("-").map(Number);
+  const today = new Date();
+  const todayKey = today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0");
+  monthGrid.innerHTML = "";
+  MONTH_NAMES_FULL.forEach((name, idx)=>{
+    const m = idx+1;
+    const key = pickerYear + "-" + String(m).padStart(2,"0");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = name.slice(0,3);
+    btn.title = capitalize(name) + " de " + pickerYear;
+    if(pickerYear===curY && m===curM) btn.classList.add("selected");
+    if(key===todayKey) btn.classList.add("is-today");
+    btn.addEventListener("click", ()=>{
+      currentMonth = key;
+      updateMonthBtnLabel();
+      closeMonthDropdown();
+      cancelEdit();
+      render();
+    });
+    monthGrid.appendChild(btn);
+  });
+}
+
+function openMonthDropdown(){
+  pickerYear = parseInt(currentMonth.split("-")[0]);
+  renderMonthGrid();
+  monthDropdown.classList.add("open");
+  monthBtn.classList.add("open");
+}
+function closeMonthDropdown(){ monthDropdown.classList.remove("open"); monthBtn.classList.remove("open"); }
+
+monthBtn.addEventListener("click", e=>{
+  e.stopPropagation();
+  if(monthDropdown.classList.contains("open")) closeMonthDropdown();
+  else openMonthDropdown();
+});
+document.getElementById("yearPrev").addEventListener("click", ()=>{ pickerYear--; renderMonthGrid(); });
+document.getElementById("yearNext").addEventListener("click", ()=>{ pickerYear++; renderMonthGrid(); });
+document.addEventListener("click", e=>{ if(!monthDropdown.contains(e.target) && e.target!==monthBtn) closeMonthDropdown(); });
+
+window.addEventListener("keydown", e=>{
+  if(e.ctrlKey && e.key.toLowerCase()==="f"){ e.preventDefault(); document.getElementById("searchInput").focus(); }
+  if(e.altKey && e.key.toLowerCase()==="n"){ e.preventDefault(); openTxModal(); }
+  if(e.key==="Escape"){
+    if(confirmOverlay.classList.contains("open")) closeConfirmDialog();
+    else if(celebrationOverlay.classList.contains("open")) celebrationOverlay.classList.remove("open");
+    else if(goalFundOverlay.classList.contains("open")) closeFundModal();
+    else if(goalOverlay.classList.contains("open")) closeGoalModal();
+    else if(categoryOverlay.classList.contains("open")) closeCategoryModal();
+    else if(yearlyOverlay.classList.contains("open")) yearlyOverlay.classList.remove("open");
+    else if(incomeOverlay.classList.contains("open")) closeIncomeModal();
+    else if(txOverlay.classList.contains("open")) closeTxModal();
+    else if(settingsOverlay.classList.contains("open")) settingsOverlay.classList.remove("open");
+    else if(monthDropdown.classList.contains("open")) closeMonthDropdown();
+  }
+});
+
+function boot(){
+  loadData();
+  applyAccent(appData.settings.accent || "#10b981", false);
+  document.getElementById("colorPickerModal").value = appData.settings.accent || "#10b981";
+  syncColorSwatch("colorPickerModal");
+  applyTheme(appData.settings.theme || "dark");
+  document.getElementById("titlePart1").textContent = appData.settings.title1;
+  document.getElementById("titlePart2").textContent = appData.settings.title2;
+  chartMode = appData.settings.chartMode || "category";
+  document.querySelectorAll(".chart-tabs button").forEach(b=> b.classList.toggle("active", b.getAttribute("data-mode")===chartMode));
+
+  const today = new Date();
+  currentMonth = today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0");
+  updateMonthBtnLabel();
+
+  updateCategoryDropdown();
+
+  // Mostra a tela de senha (ou o app) IMEDIATAMENTE, antes de renderizar
+  // a tabela/gráficos — assim a biometria (Face ID/digital) aparece na hora,
+  // sem esperar o processamento pesado dos dados.
+  showLockOrApp();
+}
+boot();
+
+// Decide na hora se mostra a lockscreen ou o app, sem esperar nada pesado.
+// A checagem de biometria roda depois, em paralelo, sem travar a tela.
+function showLockOrApp(){
+  document.getElementById("lockTitlePart1").textContent = appData.settings.title1 || "Cofre";
+  document.getElementById("lockTitlePart2").textContent = appData.settings.title2 || ".";
+
+  if (appData.settings.pin && appData.settings.pin.length === 4) {
+    document.getElementById("lockScreen").style.display = "flex";
+    document.getElementById("mainAppContent").style.display = "none";
+    setupBiometricUnlock(); // não-bloqueante: roda em paralelo
+  } else {
+    document.getElementById("mainAppContent").style.display = "block";
+    render(); // só processa os dados pesados quando de fato vai exibir o app
+  }
+}
+
+// Checa suporte a biometria e tenta o desbloqueio automático (Face ID / digital / PIN do
+// sistema), sem bloquear a exibição da lockscreen — roda por trás, em paralelo.
+async function setupBiometricUnlock(){
+  const bioSupported = await biometricAvailable();
+  const bioRow = document.getElementById("biometricRow");
+  if(bioSupported){
+    bioRow.style.display = "flex";
+    document.getElementById("btnSetupBiometric").textContent = appData.settings.biometricCredId ? "Desativar" : "Ativar";
+  } else {
+    bioRow.style.display = "none";
+    // DIAGNÓSTICO TEMPORÁRIO: mostra na tela por que a opção de biometria não aparece,
+    // já que no iOS não dá pra abrir o console sem um Mac. Pode remover depois.
+    let motivo = "motivo desconhecido";
+    if(!window.isSecureContext) motivo = "página não está em contexto seguro (HTTPS)";
+    else if(!window.PublicKeyCredential) motivo = "PublicKeyCredential não existe neste navegador";
+    else if(!navigator.credentials) motivo = "navigator.credentials não existe";
+    else motivo = "isUserVerifyingPlatformAuthenticatorAvailable() retornou false — o aparelho/navegador diz não ter Face ID/Touch ID/digital disponível para o site";
+    console.warn("Biometria indisponível:", motivo);
+    setTimeout(()=> showToast("Biometria indisponível: " + motivo), 1500);
+  }
+
+  if(bioSupported && appData.settings.biometricCredId){
+    document.getElementById("btnBiometricUnlock").style.display = "flex";
+    const ok = await verifyBiometric();
+    if(ok) unlockApp();
+  }
+}
+
+/* ---------- PWA: instalação e service worker ---------- */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  });
+}
+
+// Pede ao navegador para tratar o armazenamento deste app como "persistente" —
+// ou seja, não apagar o cache/dados automaticamente para liberar espaço, como
+// faria com um site comum. O navegador pode negar (não é garantido), mas em
+// apps instalados na tela de início costuma conceder. Não afeta nada visualmente.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persisted().then((already) => {
+    if (!already) {
+      navigator.storage.persist().then((granted) => {
+        console.log(granted ? "Armazenamento persistente concedido." : "Armazenamento persistente negado pelo navegador.");
+      });
+    }
+  });
+}
+
+let deferredInstallPrompt = null;
+const btnInstallApp = document.getElementById("btnInstallApp");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  btnInstallApp.style.display = "flex";
+});
+
+btnInstallApp.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === "accepted") showToast("App instalado");
+  deferredInstallPrompt = null;
+  btnInstallApp.style.display = "none";
+});
+
+window.addEventListener("appinstalled", () => {
+  btnInstallApp.style.display = "none";
+  showToast("App instalado com sucesso");
+});
+
+})();
+</script>
+</body>
+</html>
